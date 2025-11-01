@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { Card } from '../components';
 import { colors, spacing, typography, borderRadius, shadows } from '../theme';
 import { auth } from '../services/firebase';
@@ -88,8 +89,14 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadUserData();
-    loadTodayData();
   }, []);
+
+  // 🔥 NOVO: Atualizar dados sempre que a tela ganhar foco
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTodayData();
+    }, [])
+  );
 
   const loadUserData = () => {
     const user = auth.currentUser;

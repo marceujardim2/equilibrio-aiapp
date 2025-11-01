@@ -48,6 +48,20 @@ export default function CheckinScreen() {
   };
 
   const handleSave = async () => {
+    // Validações
+    if (sleepHours < 1 || sleepHours > 12) {
+      Alert.alert('Atenção', 'O sono deve estar entre 1 e 12 horas');
+      return;
+    }
+    if (waterCups < 0 || waterCups > 20) {
+      Alert.alert('Atenção', 'A quantidade de água deve estar entre 0 e 20 copos');
+      return;
+    }
+    if (spending && parseFloat(spending) < 0) {
+      Alert.alert('Atenção', 'O gasto não pode ser negativo');
+      return;
+    }
+
     try {
       const today = new Date().toISOString().split('T')[0];
       const userId = auth.currentUser?.uid || 'guest';
@@ -81,11 +95,48 @@ export default function CheckinScreen() {
       
       await AsyncStorage.setItem(historyKey, JSON.stringify(history));
 
+      // 🔥 NOVO: Criar transação automática se houver gasto
+      if (spending && parseFloat(spending) > 0) {
+        const transactionsKey = `transactions_${userId}`;
+        const existingTransactions = await AsyncStorage.getItem(transactionsKey);
+        const transactions = existingTransactions ? JSON.parse(existingTransactions) : [];
+        
+        // Verificar se já existe transação do check-in de hoje
+        const checkinTransactionId = `checkin_${today}`;
+        const existingTransactionIndex = transactions.findIndex(
+          (t: any) => t.id === checkinTransactionId
+        );
+        
+        const newTransaction = {
+          id: checkinTransactionId,
+          userId,
+          type: 'expense',
+          amount: parseFloat(spending),
+          category: 'others',
+          description: 'Gasto rápido (Check-in)',
+          date: today,
+          createdAt: Date.now(),
+          fromCheckin: true, // Flag para identificar
+        };
+        
+        if (existingTransactionIndex >= 0) {
+          // Atualizar transação existente
+          transactions[existingTransactionIndex] = newTransaction;
+        } else {
+          // Adicionar nova transação
+          transactions.push(newTransaction);
+        }
+        
+        await AsyncStorage.setItem(transactionsKey, JSON.stringify(transactions));
+      }
+
       setShowSuccess(true);
       setTimeout(() => {
         Alert.alert(
           'Check-in Completo! 🎉',
-          'Seus dados foram salvos com sucesso.',
+          spending && parseFloat(spending) > 0
+            ? 'Seus dados foram salvos e o gasto foi registrado nas finanças.'
+            : 'Seus dados foram salvos com sucesso.',
           [{ text: 'OK', onPress: () => setShowSuccess(false) }]
         );
       }, 500);

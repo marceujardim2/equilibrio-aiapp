@@ -48,10 +48,14 @@ export default function FinanceScreen() {
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('food');
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
-  const [budget] = useState(2000);
+  const [budget, setBudget] = useState(2000);
+  const [budgetModalVisible, setBudgetModalVisible] = useState(false);
+  const [newBudget, setNewBudget] = useState('2000');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTransactions();
+    loadBudget();
   }, []);
 
   const loadTransactions = async () => {
@@ -68,6 +72,36 @@ export default function FinanceScreen() {
     }
   };
 
+  const loadBudget = async () => {
+    try {
+      const userId = auth.currentUser?.uid || 'guest';
+      const data = await AsyncStorage.getItem(`budget_${userId}`);
+      if (data) {
+        setBudget(parseFloat(data));
+        setNewBudget(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar orçamento:', error);
+    }
+  };
+
+  const handleSaveBudget = async () => {
+    if (!newBudget || parseFloat(newBudget) <= 0) {
+      Alert.alert('Atenção', 'Digite um valor válido para o orçamento');
+      return;
+    }
+
+    try {
+      const userId = auth.currentUser?.uid || 'guest';
+      await AsyncStorage.setItem(`budget_${userId}`, newBudget);
+      setBudget(parseFloat(newBudget));
+      setBudgetModalVisible(false);
+      Alert.alert('Sucesso!', 'Orçamento atualizado');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar o orçamento');
+    }
+  };
+
   const handleAddTransaction = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Atenção', 'Digite um valor válido');
@@ -76,35 +110,85 @@ export default function FinanceScreen() {
 
     try {
       const userId = auth.currentUser?.uid || 'guest';
-      const newTransaction = {
-        id: Date.now().toString(),
-        userId,
-        type: transactionType,
-        amount: parseFloat(amount),
-        category: selectedCategory,
-        description: description || 'Sem descrição',
-        date: new Date().toISOString().split('T')[0],
-        createdAt: Date.now(),
-      };
+      
+      if (editingId) {
+        // Editar transação existente
+        const updatedTransactions = transactions.map(t =>
+          t.id === editingId
+            ? {
+                ...t,
+                type: transactionType,
+                amount: parseFloat(amount),
+                category: selectedCategory,
+                description: description || 'Sem descrição',
+              }
+            : t
+        );
+        setTransactions(updatedTransactions);
+        await AsyncStorage.setItem(`transactions_${userId}`, JSON.stringify(updatedTransactions));
+        Alert.alert('Sucesso!', 'Transação atualizada');
+      } else {
+        // Adicionar nova transação
+        const newTransaction = {
+          id: Date.now().toString(),
+          userId,
+          type: transactionType,
+          amount: parseFloat(amount),
+          category: selectedCategory,
+          description: description || 'Sem descrição',
+          date: new Date().toISOString().split('T')[0],
+          createdAt: Date.now(),
+        };
 
-      const updatedTransactions = [...transactions, newTransaction];
-      setTransactions(updatedTransactions);
-
-      await AsyncStorage.setItem(
-        `transactions_${userId}`,
-        JSON.stringify(updatedTransactions)
-      );
+        const updatedTransactions = [...transactions, newTransaction];
+        setTransactions(updatedTransactions);
+        await AsyncStorage.setItem(`transactions_${userId}`, JSON.stringify(updatedTransactions));
+        Alert.alert('Sucesso!', 'Transação adicionada');
+      }
 
       setModalVisible(false);
       setAmount('');
       setDescription('');
       setSelectedCategory('food');
-      
-      Alert.alert('Sucesso!', 'Transação adicionada com sucesso');
+      setEditingId(null);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível adicionar a transação');
-      console.error('Erro ao adicionar transação:', error);
+      Alert.alert('Erro', 'Não foi possível salvar a transação');
+      console.error('Erro ao salvar transação:', error);
     }
+  };
+
+  const handleEditTransaction = (transaction: any) => {
+    setAmount(transaction.amount.toString());
+    setDescription(transaction.description);
+    setSelectedCategory(transaction.category);
+    setTransactionType(transaction.type);
+    setEditingId(transaction.id);
+    setModalVisible(true);
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    Alert.alert(
+      'Excluir Transação',
+      'Tem certeza que deseja excluir esta transação?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const userId = auth.currentUser?.uid || 'guest';
+              const updated = transactions.filter(t => t.id !== id);
+              setTransactions(updated);
+              await AsyncStorage.setItem(`transactions_${userId}`, JSON.stringify(updated));
+              Alert.alert('Sucesso!', 'Transação excluída');
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível excluir');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const calculateTotals = () => {
@@ -184,9 +268,15 @@ export default function FinanceScreen() {
                 ]}
               />
             </View>
-            <Text style={styles.budgetText}>
-              {((expenses / budget) * 100).toFixed(0)}% do orçamento (R$ {budget})
-            </Text>
+            <View style={styles.budgetRow}>
+              <Text style={styles.budgetText}>
+                {((expenses / budget) * 100).toFixed(0)}% do orçamento (R$ {budget.toFixed(2)})
+              </Text>
+              <Pressable onPress={() => setBudgetModalVisible(true)} style={styles.editBudgetButton}>
+                <Ionicons name="create-outline" size={16} color={colors.primary} />
+                <Text style={styles.editBudgetText}>Editar</Text>
+              </Pressable>
+            </View>
           </Card>
         </Animated.View>
 
@@ -230,18 +320,53 @@ export default function FinanceScreen() {
           )}
         </Card>
 
-        {/* Dica */}
-        <Animated.View entering={FadeInDown.delay(500).springify()}>
-          <Card style={styles.tipCard}>
-            <View style={styles.tipHeader}>
-              <Ionicons name="bulb" size={24} color={colors.success} />
-              <Badge text="Dica" color={colors.success} style={styles.tipBadge} />
-            </View>
-            <Text style={styles.tipText}>
-              Você gastou 15% a menos em transporte este mês! Continue assim. 🚀
-            </Text>
-          </Card>
-        </Animated.View>
+        {/* Lista de Transações Recentes */}
+        {transactions.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Transações Recentes</Text>
+            <Card style={styles.transactionsCard}>
+              {transactions.slice(-10).reverse().map((t, index) => (
+                <Animated.View 
+                  key={t.id} 
+                  entering={FadeInDown.delay(500 + index * 50).springify()}
+                  style={styles.transactionItem}
+                >
+                  <View style={styles.transactionLeft}>
+                    <View style={[styles.transactionIcon, { backgroundColor: t.type === 'income' ? colors.success + '20' : colors.finance + '20' }]}>
+                      <Ionicons 
+                        name={CATEGORIES.find(c => c.id === t.category)?.icon as any || 'cash'} 
+                        size={20} 
+                        color={t.type === 'income' ? colors.success : colors.finance} 
+                      />
+                    </View>
+                    <View style={styles.transactionInfo}>
+                      <Text style={styles.transactionDesc}>{t.description}</Text>
+                      <Text style={styles.transactionDate}>
+                        {new Date(t.date).toLocaleDateString('pt-BR')}
+                        {t.fromCheckin && ' • Check-in'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.transactionRight}>
+                    <Text style={[styles.transactionAmount, {
+                      color: t.type === 'income' ? colors.success : colors.finance
+                    }]}>
+                      {t.type === 'income' ? '+' : '-'} R$ {t.amount.toFixed(2)}
+                    </Text>
+                    <View style={styles.transactionActions}>
+                      <Pressable onPress={() => handleEditTransaction(t)} style={styles.actionButton}>
+                        <Ionicons name="create-outline" size={18} color={colors.primary} />
+                      </Pressable>
+                      <Pressable onPress={() => handleDeleteTransaction(t.id)} style={styles.actionButton}>
+                        <Ionicons name="trash-outline" size={18} color={colors.error} />
+                      </Pressable>
+                    </View>
+                  </View>
+                </Animated.View>
+              ))}
+            </Card>
+          </>
+        )}
 
         {/* Botão Adicionar */}
         <Animated.View entering={FadeInDown.delay(600).springify()}>
@@ -338,6 +463,53 @@ export default function FinanceScreen() {
               <Button
                 title="Adicionar"
                 onPress={handleAddTransaction}
+                variant="primary"
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Editar Orçamento */}
+      <Modal
+        visible={budgetModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setBudgetModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Definir Orçamento Mensal</Text>
+              <Pressable onPress={() => setBudgetModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.inputLabel}>Valor do Orçamento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="R$ 0,00"
+              placeholderTextColor={colors.gray400}
+              value={newBudget}
+              onChangeText={setNewBudget}
+              keyboardType="numeric"
+            />
+            <Text style={styles.inputHint}>
+              Este é o valor máximo que você planeja gastar por mês
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancelar"
+                onPress={() => setBudgetModalVisible(false)}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              <Button
+                title="Salvar"
+                onPress={handleSaveBudget}
                 variant="primary"
                 style={styles.modalButton}
               />
@@ -576,5 +748,79 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  budgetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  editBudgetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs / 2,
+  },
+  editBudgetText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  inputHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+  },
+  transactionsCard: {
+    marginBottom: spacing.md,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray100,
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  transactionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDesc: {
+    ...typography.body,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  transactionDate: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs / 2,
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+  },
+  transactionAmount: {
+    ...typography.body,
+    fontWeight: '700',
+    marginBottom: spacing.xs / 2,
+  },
+  transactionActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionButton: {
+    padding: spacing.xs / 2,
   },
 });

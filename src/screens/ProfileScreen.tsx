@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal, TextInput } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Card, Badge } from '../components';
+import { updateProfile } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Card, Badge, Button } from '../components';
 import { colors, spacing, typography, borderRadius, shadows } from '../theme';
-import { logout } from '../services/auth';
+import { logout, getCurrentUser } from '../services/auth';
+import { auth } from '../services/firebase';
+import { requestPermissions, scheduleCheckinReminder, cancelAllNotifications } from '../services/notifications';
 
 interface BadgeItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -73,6 +77,117 @@ const SettingItem: React.FC<SettingItemProps> = ({
 export default function ProfileScreen() {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [newName, setNewName] = useState('');
+  const [avgScore, setAvgScore] = useState(0);
+  const [activeDays, setActiveDays] = useState(0);
+  const [achievements, setAchievements] = useState(0);
+
+  useEffect(() => {
+    loadUserData();
+    loadStats();
+  }, []);
+
+  const loadUserData = () => {
+    const user = auth.currentUser;
+    if (user) {
+      setUserName(user.displayName || 'Usuário');
+      setUserEmail(user.email || '');
+      setNewName(user.displayName || '');
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const userId = auth.currentUser?.uid || 'guest';
+      
+      // Calcular dias ativos (check-ins)
+      const historyData = await AsyncStorage.getItem(`checkin_history_${userId}`);
+      if (historyData) {
+        const history = JSON.parse(historyData);
+        setActiveDays(history.length);
+        
+        // Calcular score médio
+        const scores = history.map((c: any) => {
+          const sleep = c.sleepHours >= 7 && c.sleepHours <= 9 ? 10 : 5;
+          const mood = c.mood * 2;
+          const activity = c.physicalActivity ? 10 : 0;
+          return Math.round((sleep + mood + activity) / 3 * 10);
+        });
+        const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
+        setAvgScore(Math.round(avg));
+      }
+      
+      // Calcular conquistas
+      const streakData = await AsyncStorage.getItem(`wellness_streak_${userId}`);
+      let count = 0;
+      if (streakData) {
+        const streak = JSON.parse(streakData);
+        if (streak.count >= 7) count++;
+        if (streak.count >= 30) count++;
+      }
+      if (activeDays >= 7) count++;
+      if (activeDays >= 30) count++;
+      setAchievements(count);
+    } catch (error) {
+      console.error('Erro ao carregar stats:', error);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!newName.trim()) {
+      Alert.alert('Atenção', 'Digite um nome válido');
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await updateProfile(user, {
+          displayName: newName.trim(),
+        });
+        setUserName(newName.trim());
+        setEditModalVisible(false);
+        Alert.alert('Sucesso!', 'Perfil atualizado com sucesso');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar o perfil');
+      console.error('Erro ao atualizar perfil:', error);
+    }
+  };
+
+  const handleNotificationsChange = async (value: boolean) => {
+    setNotifications(value);
+    
+    if (value) {
+      const granted = await requestPermissions();
+      if (granted) {
+        try {
+          await scheduleCheckinReminder();
+          Alert.alert('Sucesso!', 'Lembretes ativados:\n• Check-in diário às 20h\n• Meditação às 9h');
+        } catch (error) {
+          Alert.alert('Erro', 'Não foi possível agendar as notificações');
+          setNotifications(false);
+        }
+      } else {
+        Alert.alert('Permissão Negada', 'Ative as notificações nas configurações do dispositivo');
+        setNotifications(false);
+      }
+    } else {
+      try {
+        await cancelAllNotifications();
+        Alert.alert('Lembretes Desativados');
+      } catch (error) {
+        console.error('Erro ao cancelar notificações:', error);
+      }
+    }
+  };
 
   const handleLogout = async () => {
     Alert.alert(
@@ -103,12 +218,14 @@ export default function ProfileScreen() {
           <LinearGradient colors={[colors.primary, colors.tertiary]} style={styles.header}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>JD</Text>
+                <Text style={styles.avatarText}>
+                  {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                </Text>
               </View>
-              <Badge text="Premium" color={colors.warning} style={styles.premiumBadge} />
+              <Badge text="Free" color={colors.gray400} style={styles.premiumBadge} />
             </View>
-            <Text style={styles.userName}>João da Silva</Text>
-            <Text style={styles.userEmail}>joao@email.com</Text>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.userEmail}>{userEmail}</Text>
           </LinearGradient>
         </Animated.View>
 
@@ -117,17 +234,17 @@ export default function ProfileScreen() {
           <Card style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>78</Text>
+                <Text style={styles.statValue}>{avgScore || '--'}</Text>
                 <Text style={styles.statLabel}>Score Médio</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>45</Text>
+                <Text style={styles.statValue}>{activeDays}</Text>
                 <Text style={styles.statLabel}>Dias Ativos</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>12</Text>
+                <Text style={styles.statValue}>{achievements}</Text>
                 <Text style={styles.statLabel}>Conquistas</Text>
               </View>
             </View>
@@ -170,13 +287,13 @@ export default function ProfileScreen() {
         {/* Configurações */}
         <Text style={styles.sectionTitle}>Configurações</Text>
         <Card style={styles.settingsCard}>
-          <SettingItem icon="person" title="Editar Perfil" onPress={() => {}} />
+          <SettingItem icon="person" title="Editar Perfil" onPress={handleEditProfile} />
           <SettingItem
             icon="notifications"
             title="Notificações"
             showSwitch
             switchValue={notifications}
-            onSwitchChange={setNotifications}
+            onSwitchChange={handleNotificationsChange}
           />
           <SettingItem
             icon="moon"
@@ -186,7 +303,7 @@ export default function ProfileScreen() {
             onSwitchChange={setDarkMode}
           />
           <SettingItem icon="language" title="Idioma" value="Português" onPress={() => {}} />
-          <SettingItem icon="card" title="Assinatura" value="Premium" onPress={() => {}} />
+          <SettingItem icon="card" title="Assinatura" value="Free" onPress={() => {}} />
         </Card>
 
         {/* Outros */}
@@ -206,6 +323,66 @@ export default function ProfileScreen() {
 
         <Text style={styles.version}>Versão 1.0.0</Text>
       </View>
+
+      {/* Modal de Edição de Perfil */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Editar Perfil</Text>
+              <Pressable onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+
+            <View style={styles.avatarEditContainer}>
+              <View style={styles.avatarLarge}>
+                <Text style={styles.avatarTextLarge}>
+                  {newName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
+                </Text>
+              </View>
+              <Text style={styles.avatarHint}>Avatar gerado automaticamente</Text>
+            </View>
+
+            <Text style={styles.inputLabel}>Nome Completo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Digite seu nome"
+              placeholderTextColor={colors.gray400}
+              value={newName}
+              onChangeText={setNewName}
+            />
+
+            <Text style={styles.inputLabel}>E-mail</Text>
+            <TextInput
+              style={[styles.input, styles.inputDisabled]}
+              value={userEmail}
+              editable={false}
+            />
+            <Text style={styles.inputHint}>O e-mail não pode ser alterado</Text>
+
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancelar"
+                onPress={() => setEditModalVisible(false)}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              <Button
+                title="Salvar"
+                onPress={handleSaveProfile}
+                variant="primary"
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -383,5 +560,83 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    ...typography.h3,
+    color: colors.text,
+  },
+  avatarEditContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  avatarLarge: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  avatarTextLarge: {
+    ...typography.h2,
+    color: colors.card,
+    fontWeight: '700',
+  },
+  avatarHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+  },
+  inputLabel: {
+    ...typography.body,
+    color: colors.text,
+    marginBottom: spacing.xs,
+    fontWeight: '600',
+  },
+  input: {
+    ...typography.body,
+    color: colors.text,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+    marginBottom: spacing.md,
+  },
+  inputDisabled: {
+    backgroundColor: colors.gray100,
+    color: colors.textSecondary,
+  },
+  inputHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
   },
 });
