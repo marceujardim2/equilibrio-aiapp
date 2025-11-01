@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,8 +9,7 @@ import { Card } from '../components';
 import { colors, spacing, typography, borderRadius, shadows } from '../theme';
 import { auth } from '../services/firebase';
 import Svg, { Circle } from 'react-native-svg';
-
-const { width } = Dimensions.get('window');
+import { responsive } from '../utils/responsive';
 
 interface CategoryCardProps {
   title: string;
@@ -237,16 +236,17 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <LinearGradient
-        colors={[colors.primary + '15', colors.background]}
-        style={styles.header}
-      >
-        <Text style={styles.greeting}>
-          Olá{userName ? `, ${userName}` : ''}! 👋
-        </Text>
-        <Text style={styles.date}>{today}</Text>
-      </LinearGradient>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <LinearGradient
+          colors={[colors.primary + '15', colors.background]}
+          style={styles.header}
+        >
+          <Text style={styles.greeting}>
+            Olá{userName ? `, ${userName}` : ''}! 👋
+          </Text>
+          <Text style={styles.date}>{today}</Text>
+        </LinearGradient>
 
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.springify()}>
@@ -298,14 +298,19 @@ export default function HomeScreen() {
           </Card>
         </Animated.View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  container: {
+    flex: 1,
   },
   header: {
     paddingHorizontal: spacing.lg,
