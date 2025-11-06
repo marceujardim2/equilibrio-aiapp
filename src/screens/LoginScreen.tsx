@@ -1,20 +1,26 @@
+/**
+ * Login Screen - Redesigned with new dark theme
+ * Tela de login moderna com novo design system
+ */
+
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
-  ActivityIndicator,
+  Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, borderRadius, shadows } from '../theme';
+import { tokens } from '../hooks/tokens';
+import { useThemedColors } from '../hooks/useThemedColors';
+import { Button, Input } from '../components';
 import { signInWithEmail, getAuthErrorMessage, resetPassword } from '../services/auth';
 
 interface LoginScreenProps {
@@ -23,6 +29,7 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLoginSuccess, onNavigateToSignup }: LoginScreenProps) {
+  const colors = useThemedColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +61,7 @@ export default function LoginScreen({ onLoginSuccess, onNavigateToSignup }: Logi
     try {
       await resetPassword(email);
       Alert.alert(
-        'E-mail Enviado!',
+        'E-mail Enviado! ✅',
         'Verifique sua caixa de entrada para redefinir sua senha.'
       );
     } catch (error: any) {
@@ -63,240 +70,162 @@ export default function LoginScreen({ onLoginSuccess, onNavigateToSignup }: Logi
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header com Gradiente */}
-        <Animated.View entering={FadeInDown.springify()}>
-          <LinearGradient
-            colors={[colors.primary, colors.tertiary]}
-            style={styles.header}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.logoContainer}>
-              <Ionicons name="heart-circle" size={80} color={colors.card} />
-            </View>
-            <Text style={styles.headerTitle}>Equilíbrio</Text>
-            <Text style={styles.headerSubtitle}>Bem-vindo de volta!</Text>
-          </LinearGradient>
-        </Animated.View>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header com Gradiente */}
+          <Animated.View entering={FadeInDown.springify()}>
+            <LinearGradient
+              colors={[colors.primary, colors.accent]}
+              style={styles.header}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.logoContainer}>
+                <Ionicons name="heart-circle" size={80} color={colors.background} />
+              </View>
+              <Text style={[styles.headerTitle, { color: colors.background }]}>EquilíbrioAI</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.background }]}>Bem-vindo de volta!</Text>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Formulário */}
-        <View style={styles.formContainer}>
-          <Animated.View entering={FadeInUp.delay(100).springify()}>
-            <Text style={styles.label}>E-mail</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail" size={20} color={colors.gray400} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
+          {/* Formulário */}
+          <View style={styles.formContainer}>
+            <Animated.View entering={FadeInUp.delay(100).springify()}>
+              <Input
+                label="E-mail"
                 placeholder="seu@email.com"
-                placeholderTextColor={colors.gray400}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                leftIcon="mail"
               />
-            </View>
-          </Animated.View>
+            </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(200).springify()}>
-            <Text style={styles.label}>Senha</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed" size={20} color={colors.gray400} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
+            <Animated.View entering={FadeInUp.delay(200).springify()}>
+              <Input
+                label="Senha"
                 placeholder="••••••••"
-                placeholderTextColor={colors.gray400}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                leftIcon="lock-closed"
+                rightIcon={showPassword ? 'eye-off' : 'eye'}
+                onRightIconPress={() => setShowPassword(!showPassword)}
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Ionicons
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={20}
-                  color={colors.gray400}
-                />
+            </Animated.View>
+
+            <Animated.View entering={FadeInUp.delay(300).springify()}>
+              <Pressable onPress={handleForgotPassword}>
+                <Text style={[styles.forgotPassword, { color: colors.primary }]}>Esqueceu a senha?</Text>
               </Pressable>
-            </View>
-          </Animated.View>
+            </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(300).springify()}>
-            <Pressable onPress={handleForgotPassword}>
-              <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
-            </Pressable>
-          </Animated.View>
+            {/* Botão de Login */}
+            <Animated.View entering={FadeInUp.delay(400).springify()}>
+              <Button
+                title="Entrar"
+                onPress={handleLogin}
+                variant="primary"
+                size="large"
+                loading={loading}
+                style={styles.loginButton}
+              />
+            </Animated.View>
 
-          {/* Botão de Login */}
-          <Animated.View entering={FadeInUp.delay(400).springify()}>
-            <Pressable
-              onPress={handleLogin}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.loginButton,
-                pressed && styles.loginButtonPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={[colors.primary, colors.tertiary]}
-                style={styles.loginButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.card} />
-                ) : (
-                  <Text style={styles.loginButtonText}>Entrar</Text>
-                )}
-              </LinearGradient>
-            </Pressable>
-          </Animated.View>
+            {/* Divisor */}
+            <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={[styles.dividerText, { color: colors.textSecondary }]}>ou</Text>
+              <View style={styles.dividerLine} />
+            </Animated.View>
 
-          {/* Divisor */}
-          <Animated.View entering={FadeInUp.delay(500).springify()} style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
-            <View style={styles.dividerLine} />
-          </Animated.View>
-
-          {/* Botão de Cadastro */}
-          <Animated.View entering={FadeInUp.delay(600).springify()}>
-            <Pressable
-              onPress={onNavigateToSignup}
-              style={({ pressed }) => [
-                styles.signupButton,
-                pressed && styles.signupButtonPressed,
-              ]}
-            >
-              <Text style={styles.signupButtonText}>Criar uma conta</Text>
-            </Pressable>
-          </Animated.View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            {/* Botão de Cadastro */}
+            <Animated.View entering={FadeInUp.delay(600).springify()}>
+              <Button
+                title="Criar uma conta"
+                onPress={onNavigateToSignup}
+                variant="outline"
+                size="large"
+                style={styles.signupButton}
+              />
+            </Animated.View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: tokens.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
+    paddingTop: 40,
+    paddingBottom: tokens.spacing.xl,
+    paddingHorizontal: tokens.spacing.xl,
     alignItems: 'center',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
   logoContainer: {
-    marginBottom: spacing.md,
+    marginBottom: tokens.spacing.md,
   },
   headerTitle: {
-    ...typography.h1,
-    color: colors.card,
-    marginBottom: spacing.xs,
+    ...tokens.typography.h1,
+    color: tokens.colors.background,
+    marginBottom: tokens.spacing.xs,
+    fontWeight: '700',
   },
   headerSubtitle: {
-    ...typography.body,
-    color: colors.card,
+    ...tokens.typography.body,
+    color: tokens.colors.background,
     opacity: 0.9,
   },
   formContainer: {
-    padding: spacing.xl,
-  },
-  label: {
-    ...typography.body,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    fontWeight: '600',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-    ...shadows.sm,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-  },
-  inputIcon: {
-    marginRight: spacing.sm,
-  },
-  input: {
+    padding: tokens.spacing.xl,
     flex: 1,
-    ...typography.body,
-    color: colors.text,
-    paddingVertical: spacing.md,
-  },
-  eyeIcon: {
-    padding: spacing.xs,
   },
   forgotPassword: {
-    ...typography.bodySmall,
-    color: colors.primary,
+    ...tokens.typography.bodySm,
+    color: tokens.colors.primary,
     textAlign: 'right',
-    marginBottom: spacing.lg,
+    marginBottom: tokens.spacing.lg,
   },
   loginButton: {
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  loginButtonPressed: {
-    opacity: 0.8,
-  },
-  loginButtonGradient: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginButtonText: {
-    ...typography.button,
-    color: colors.card,
+    marginBottom: tokens.spacing.md,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.lg,
+    marginVertical: tokens.spacing.lg,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.gray200,
+    backgroundColor: tokens.colors.divider,
   },
   dividerText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginHorizontal: spacing.md,
+    ...tokens.typography.bodySm,
+    color: tokens.colors.textSecondary,
+    marginHorizontal: tokens.spacing.md,
   },
   signupButton: {
-    borderRadius: borderRadius.md,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  signupButtonPressed: {
-    opacity: 0.6,
-  },
-  signupButtonText: {
-    ...typography.button,
-    color: colors.primary,
+    marginTop: tokens.spacing.sm,
   },
 });

@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, Alert, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInLeft } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Card, Badge, Button } from '../components';
-import { colors, spacing, typography, borderRadius } from '../theme';
-import { PieChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
+import { Button } from '../components';
+import { spacing as spacingTokens, borderRadius } from '../theme/spacing';
+import { typography } from '../theme/typography';
+import { colors } from '../theme';
+import { useThemedColors } from '../hooks/useThemedColors';
+import Summary from '../components/Finance/Summary';
+import MonthlyBudget from '../components/Finance/MonthlyBudget';
+import SpendChart from '../components/Finance/SpendChart';
+import Transactions from '../components/Finance/Transactions';
+import HeroBalance from '../components/Finance/HeroBalance';
+import SummaryCards from '../components/Finance/SummaryCards';
+import FinanceHeader from '../components/Finance/FinanceHeader';
+import Section from '../components/Finance/Section';
+import CategoriesList from '../components/Finance/CategoriesList';
+import FloatingAddButton from '../components/Finance/FloatingAddButton';
+import HeroSection from '../components/Finance/HeroSection';
+import EmptyStateCard from '../components/Finance/EmptyStateCard';
 import { auth } from '../services/firebase';
-
-const screenWidth = Dimensions.get('window').width;
 
 interface CategoryItemProps {
   name: string;
@@ -20,28 +32,16 @@ interface CategoryItemProps {
   delay: number;
 }
 
-const CategoryItem: React.FC<CategoryItemProps> = ({ name, amount, percentage, color, icon, delay }) => (
-  <Animated.View entering={FadeInLeft.delay(delay).springify()} style={styles.categoryItem}>
-    <View style={[styles.categoryIcon, { backgroundColor: color + '20' }]}>
-      <Ionicons name={icon} size={20} color={color} />
-    </View>
-    <View style={styles.categoryInfo}>
-      <Text style={styles.categoryName}>{name}</Text>
-      <Text style={styles.categoryPercentage}>{percentage}%</Text>
-    </View>
-    <Text style={styles.categoryAmount}>R$ {amount.toFixed(2)}</Text>
-  </Animated.View>
-);
-
-const CATEGORIES = [
-  { id: 'food', name: 'Alimentação', icon: 'restaurant', color: colors.finance },
-  { id: 'transport', name: 'Transporte', icon: 'car', color: colors.warning },
-  { id: 'leisure', name: 'Lazer', icon: 'game-controller', color: colors.tertiary },
-  { id: 'health', name: 'Saúde', icon: 'fitness', color: colors.activity },
-  { id: 'others', name: 'Outros', icon: 'ellipsis-horizontal', color: colors.gray400 },
-];
+const baseCategories = (c: ReturnType<typeof useThemedColors>) => ([
+  { id: 'food', name: 'Alimentação', icon: 'restaurant', color: c.error },
+  { id: 'transport', name: 'Transporte', icon: 'car', color: c.warning },
+  { id: 'leisure', name: 'Lazer', icon: 'game-controller', color: c.accent },
+  { id: 'health', name: 'Saúde', icon: 'fitness', color: c.success },
+  { id: 'others', name: 'Outros', icon: 'ellipsis-horizontal', color: c.textSecondary },
+]);
 
 export default function FinanceScreen() {
+  const colors = useThemedColors();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
@@ -215,7 +215,7 @@ export default function FinanceScreen() {
         categoryTotals[t.category] += t.amount;
       });
 
-    return CATEGORIES.map(cat => ({
+    return baseCategories(colors).map(cat => ({
       name: cat.name,
       amount: categoryTotals[cat.id] || 0,
       color: cat.color,
@@ -231,151 +231,74 @@ export default function FinanceScreen() {
     name: cat.name,
     amount: cat.amount,
     color: cat.color,
-    legendFontColor: colors.text,
+    legendFontColor: colors.textPrimary,
   }));
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.springify()}>
-          <Text style={styles.title}>Finanças</Text>
-          <Text style={styles.subtitle}>Controle seus gastos</Text>
+          <HeroSection
+            title="Finanças"
+            subtitle="Controle seus gastos com equilíbrio"
+            balance={income - expenses}
+            income={income}
+            expense={expenses}
+            saved={Math.max(income - expenses, 0)}
+            remaining={remaining}
+            budget={budget}
+            onAdd={() => setModalVisible(true)}
+            onEditBudget={() => setBudgetModalVisible(true)}
+          />
         </Animated.View>
 
-        {/* Resumo */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
-          <Card style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Gasto</Text>
-                <Text style={[styles.summaryValue, { color: colors.finance }]}>
-                  R$ {expenses.toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Restante</Text>
-                <Text style={[styles.summaryValue, { color: colors.financePositive }]}>
-                  R$ {remaining.toFixed(2)}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${(expenses / budget) * 100}%`, backgroundColor: colors.finance },
-                ]}
-              />
-            </View>
-            <View style={styles.budgetRow}>
-              <Text style={styles.budgetText}>
-                {((expenses / budget) * 100).toFixed(0)}% do orçamento (R$ {budget.toFixed(2)})
-              </Text>
-              <Pressable onPress={() => setBudgetModalVisible(true)} style={styles.editBudgetButton}>
-                <Ionicons name="create-outline" size={16} color={colors.primary} />
-                <Text style={styles.editBudgetText}>Editar</Text>
-              </Pressable>
-            </View>
-          </Card>
-        </Animated.View>
+        {/* Gráfico + CTA (somente se houver dados de categoria) */}
+        {categoryData.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <Section title="Gastos por categoria">
+              <SpendChart data={categoryData} />
+            </Section>
+          </Animated.View>
+        )}
 
-        {/* Gráfico */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <Card style={styles.chartCard}>
-            <Text style={styles.sectionTitle}>Gastos por Categoria</Text>
-            <PieChart
-              data={chartData}
-              width={screenWidth - spacing.lg * 4}
-              height={180}
-              chartConfig={{
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              }}
-              accessor="amount"
-              backgroundColor="transparent"
-              paddingLeft="0"
-              absolute
+        {/* Categorias detalhadas (mantemos se houver dados) */}
+        {categoryData.length > 0 && (
+          <Section title="Detalhes">
+            <CategoriesList
+              data={categoryData.map((cat) => ({
+                name: cat.name,
+                amount: cat.amount,
+                percentage: totalExpenses > 0 ? Math.round((cat.amount / totalExpenses) * 100) : 0,
+                color: cat.color,
+                icon: cat.icon as any,
+              }))}
             />
-          </Card>
-        </Animated.View>
-
-        {/* Categorias */}
-        <Text style={styles.sectionTitle}>Detalhes</Text>
-
-        <Card style={styles.categoriesCard}>
-          {categoryData.length > 0 ? (
-            categoryData.map((cat, index) => (
-              <CategoryItem
-                key={cat.name}
-                name={cat.name}
-                amount={cat.amount}
-                percentage={totalExpenses > 0 ? Math.round((cat.amount / totalExpenses) * 100) : 0}
-                color={cat.color}
-                icon={cat.icon as any}
-                delay={300 + index * 50}
-              />
-            ))
-          ) : (
-            <Text style={styles.emptyText}>Nenhuma transação registrada ainda</Text>
-          )}
-        </Card>
+          </Section>
+        )}
 
         {/* Lista de Transações Recentes */}
-        {transactions.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Transações Recentes</Text>
-            <Card style={styles.transactionsCard}>
-              {transactions.slice(-10).reverse().map((t, index) => (
-                <Animated.View 
-                  key={t.id} 
-                  entering={FadeInDown.delay(500 + index * 50).springify()}
-                  style={styles.transactionItem}
-                >
-                  <View style={styles.transactionLeft}>
-                    <View style={[styles.transactionIcon, { backgroundColor: t.type === 'income' ? colors.success + '20' : colors.finance + '20' }]}>
-                      <Ionicons 
-                        name={CATEGORIES.find(c => c.id === t.category)?.icon as any || 'cash'} 
-                        size={20} 
-                        color={t.type === 'income' ? colors.success : colors.finance} 
-                      />
-                    </View>
-                    <View style={styles.transactionInfo}>
-                      <Text style={styles.transactionDesc}>{t.description}</Text>
-                      <Text style={styles.transactionDate}>
-                        {new Date(t.date).toLocaleDateString('pt-BR')}
-                        {t.fromCheckin && ' • Check-in'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.transactionRight}>
-                    <Text style={[styles.transactionAmount, {
-                      color: t.type === 'income' ? colors.success : colors.finance
-                    }]}>
-                      {t.type === 'income' ? '+' : '-'} R$ {t.amount.toFixed(2)}
-                    </Text>
-                    <View style={styles.transactionActions}>
-                      <Pressable onPress={() => handleEditTransaction(t)} style={styles.actionButton}>
-                        <Ionicons name="create-outline" size={18} color={colors.primary} />
-                      </Pressable>
-                      <Pressable onPress={() => handleDeleteTransaction(t.id)} style={styles.actionButton}>
-                        <Ionicons name="trash-outline" size={18} color={colors.error} />
-                      </Pressable>
-                    </View>
-                  </View>
-                </Animated.View>
-              ))}
-            </Card>
-          </>
+        {transactions.length > 0 ? (
+          <Section
+            title="Transações Recentes"
+            footer={(
+              <Pressable style={styles.ctaLink} onPress={() => {}}>
+                <Text style={[styles.ctaText, { color: colors.primary }]}>Ver todas</Text>
+              </Pressable>
+            )}
+          >
+            <Transactions
+              transactions={transactions.slice(-10).reverse() as any}
+              onEdit={handleEditTransaction as any}
+              onDelete={handleDeleteTransaction}
+            />
+          </Section>
+        ) : (
+          <EmptyStateCard title="Nenhuma transação ainda" subtitle="Adicione sua primeira transação para começar a visualizar seus gastos e receitas." />
         )}
 
         {/* Botão Adicionar */}
-        <Animated.View entering={FadeInDown.delay(600).springify()}>
-          <Pressable style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <Ionicons name="add-circle" size={24} color={colors.card} />
-            <Text style={styles.addButtonText}>Adicionar Transação</Text>
-          </Pressable>
-        </Animated.View>
+        <FloatingAddButton onPress={() => setModalVisible(true)} />
       </View>
 
       {/* Modal de Adicionar Transação */}
@@ -386,11 +309,11 @@ export default function FinanceScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Nova Transação</Text>
               <Pressable onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </Pressable>
             </View>
 
@@ -415,40 +338,41 @@ export default function FinanceScreen() {
             </View>
 
             {/* Valor */}
-            <Text style={styles.inputLabel}>Valor</Text>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Valor</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
               placeholder="R$ 0,00"
-              placeholderTextColor={colors.gray400}
+              placeholderTextColor={colors.textSecondary}
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
             />
 
             {/* Descrição */}
-            <Text style={styles.inputLabel}>Descrição</Text>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Descrição</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
               placeholder="Ex: Almoço, Salário..."
-              placeholderTextColor={colors.gray400}
+              placeholderTextColor={colors.textSecondary}
               value={description}
               onChangeText={setDescription}
             />
 
             {/* Categoria */}
-            <Text style={styles.inputLabel}>Categoria</Text>
+              <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Categoria</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-              {CATEGORIES.map(cat => (
+              {baseCategories(colors).map(cat => (
                 <Pressable
                   key={cat.id}
                   style={[
                     styles.categoryButton,
+                    { borderColor: colors.border },
                     selectedCategory === cat.id && { backgroundColor: cat.color + '20', borderColor: cat.color }
                   ]}
                   onPress={() => setSelectedCategory(cat.id)}
                 >
                   <Ionicons name={cat.icon as any} size={24} color={cat.color} />
-                  <Text style={styles.categoryButtonText}>{cat.name}</Text>
+                  <Text style={[styles.categoryButtonText, { color: colors.textPrimary }]}>{cat.name}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -480,19 +404,19 @@ export default function FinanceScreen() {
         onRequestClose={() => setBudgetModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Definir Orçamento Mensal</Text>
               <Pressable onPress={() => setBudgetModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </Pressable>
             </View>
 
-            <Text style={styles.inputLabel}>Valor do Orçamento</Text>
+            <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Valor do Orçamento</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary, borderColor: colors.border }]}
               placeholder="R$ 0,00"
-              placeholderTextColor={colors.gray400}
+              placeholderTextColor={colors.textSecondary}
               value={newBudget}
               onChangeText={setNewBudget}
               keyboardType="numeric"
@@ -526,32 +450,28 @@ export default function FinanceScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
+    padding: spacingTokens.lg,
   },
   title: {
     ...typography.h2,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    marginBottom: spacingTokens.xs,
   },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
+    marginBottom: spacingTokens.lg,
   },
   summaryCard: {
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   summaryItem: {
     alignItems: 'center',
@@ -560,7 +480,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     ...typography.bodySmall,
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    marginBottom: spacingTokens.xs,
   },
   summaryValue: {
     ...typography.h3,
@@ -568,15 +488,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: colors.gray200,
-    marginHorizontal: spacing.md,
+    marginHorizontal: spacingTokens.md,
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.gray200,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
-    marginBottom: spacing.sm,
+    marginBottom: spacingTokens.sm,
   },
   progressFill: {
     height: '100%',
@@ -584,90 +502,53 @@ const styles = StyleSheet.create({
   },
   budgetText: {
     ...typography.caption,
-    color: colors.textSecondary,
     textAlign: 'center',
   },
   chartCard: {
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   sectionTitle: {
     ...typography.h4,
-    color: colors.text,
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   categoriesCard: {
-    marginBottom: spacing.md,
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  categoryInfo: {
-    flex: 1,
-  },
-  categoryName: {
-    ...typography.body,
-    color: colors.text,
-  },
-  categoryPercentage: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  categoryAmount: {
-    ...typography.h4,
-    color: colors.text,
-    fontWeight: '600',
+    marginBottom: spacingTokens.md,
   },
   tipCard: {
-    backgroundColor: colors.success + '10',
     borderLeftWidth: 4,
-    borderLeftColor: colors.success,
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacingTokens.sm,
   },
   tipBadge: {
-    marginLeft: spacing.sm,
+    marginLeft: spacingTokens.sm,
   },
   tipText: {
     ...typography.body,
-    color: colors.textSecondary,
     lineHeight: 22,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    padding: spacing.md,
+    padding: spacingTokens.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacingTokens.xl,
   },
   addButtonText: {
     ...typography.button,
-    color: colors.card,
-    marginLeft: spacing.sm,
+    marginLeft: spacingTokens.sm,
   },
+  ctaLink: { alignItems: 'flex-end', marginBottom: spacingTokens.md },
+  ctaText: { ...typography.caption, fontWeight: '600' },
   emptyText: {
     ...typography.body,
-    color: colors.textSecondary,
     textAlign: 'center',
-    padding: spacing.lg,
+    padding: spacingTokens.lg,
   },
   modalOverlay: {
     flex: 1,
@@ -675,82 +556,70 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: spacing.lg,
+    padding: spacingTokens.lg,
     maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacingTokens.lg,
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.text,
   },
   typeContainer: {
     flexDirection: 'row',
-    marginBottom: spacing.md,
-    gap: spacing.sm,
+    marginBottom: spacingTokens.md,
+    gap: spacingTokens.sm,
   },
   typeButton: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacingTokens.md,
     borderRadius: borderRadius.md,
     borderWidth: 2,
-    borderColor: colors.gray200,
+    
     alignItems: 'center',
   },
-  typeButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
-  },
+  typeButtonActive: {},
   typeText: {
     ...typography.body,
-    color: colors.textSecondary,
   },
   typeTextActive: {
-    color: colors.primary,
     fontWeight: '600',
   },
   inputLabel: {
     ...typography.body,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    marginBottom: spacingTokens.xs,
     fontWeight: '600',
   },
   input: {
     ...typography.body,
-    color: colors.text,
-    padding: spacing.md,
+    padding: spacingTokens.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.gray200,
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   categoryScroll: {
-    marginBottom: spacing.lg,
+    marginBottom: spacingTokens.lg,
   },
   categoryButton: {
-    padding: spacing.sm,
+    padding: spacingTokens.sm,
     borderRadius: borderRadius.md,
     borderWidth: 2,
-    borderColor: colors.gray200,
-    marginRight: spacing.sm,
+    marginRight: spacingTokens.sm,
     alignItems: 'center',
     minWidth: 80,
   },
   categoryButtonText: {
     ...typography.caption,
-    color: colors.text,
-    marginTop: spacing.xs / 2,
+    marginTop: spacingTokens.xs / 2,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacingTokens.sm,
   },
   modalButton: {
     flex: 1,
@@ -759,12 +628,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacingTokens.sm,
   },
   editBudgetButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs / 2,
+    gap: spacingTokens.xs / 2,
   },
   editBudgetText: {
     ...typography.caption,
@@ -774,19 +643,19 @@ const styles = StyleSheet.create({
   inputHint: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.md,
+    marginTop: -spacingTokens.sm,
+    marginBottom: spacingTokens.md,
   },
   transactionsCard: {
-    marginBottom: spacing.md,
+    marginBottom: spacingTokens.md,
   },
   transactionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacingTokens.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    
   },
   transactionLeft: {
     flexDirection: 'row',
@@ -799,20 +668,18 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacingTokens.sm,
   },
   transactionInfo: {
     flex: 1,
   },
   transactionDesc: {
     ...typography.body,
-    color: colors.text,
     fontWeight: '600',
   },
   transactionDate: {
     ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: spacing.xs / 2,
+    marginTop: spacingTokens.xs / 2,
   },
   transactionRight: {
     alignItems: 'flex-end',
@@ -820,13 +687,13 @@ const styles = StyleSheet.create({
   transactionAmount: {
     ...typography.body,
     fontWeight: '700',
-    marginBottom: spacing.xs / 2,
+    marginBottom: spacingTokens.xs / 2,
   },
   transactionActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacingTokens.sm,
   },
   actionButton: {
-    padding: spacing.xs / 2,
+    padding: spacingTokens.xs / 2,
   },
 });

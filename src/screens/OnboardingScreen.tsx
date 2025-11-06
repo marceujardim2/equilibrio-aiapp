@@ -1,41 +1,54 @@
+/**
+ * Onboarding Screen - Redesigned with new dark theme
+ * 3 slides com microcopy otimista e motivacional
+ */
+
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, Pressable, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, borderRadius } from '../theme';
+import { tokens } from '../hooks/tokens';
+import { useThemedColors } from '../hooks/useThemedColors';
+import { Button } from '../components';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 interface OnboardingSlide {
   id: string;
   icon: keyof typeof Ionicons.glyphMap;
+  emoji: string;
   title: string;
   description: string;
-  gradient: string[];
+  gradient: [string, string];
 }
 
 const slides: OnboardingSlide[] = [
   {
     id: '1',
-    icon: 'heart',
-    title: 'Bem-vindo ao Equilíbrio',
-    description: 'Seu companheiro diário para saúde, bem-estar e finanças em harmonia',
-    gradient: [colors.primary, colors.tertiary],
+    icon: 'wallet',
+    emoji: '💰',
+    title: 'Controle seus gastos com clareza',
+    description: 'Registre suas transações de forma rápida e visualize onde seu dinheiro está indo.',
+    gradient: ['#000', '#000'], // substituído dinamicamente no render
   },
   {
     id: '2',
-    icon: 'stats-chart',
-    title: 'Acompanhe seu Progresso',
-    description: 'Visualize seu equilíbrio diário através de métricas inteligentes e gráficos',
-    gradient: [colors.secondary, colors.activity],
+    icon: 'heart',
+    emoji: '💚',
+    title: 'Registre hábitos, evolua diariamente',
+    description: 'Faça check-ins diários e acompanhe seu bem-estar com métricas simples e objetivas.',
+    gradient: ['#000', '#000'], // substituído dinamicamente no render
   },
   {
     id: '3',
-    icon: 'sparkles',
-    title: 'Conquiste seus Objetivos',
-    description: 'Ganhe badges, mantenha streaks e celebre cada conquista',
-    gradient: [colors.mood, colors.warning],
+    icon: 'trending-up',
+    emoji: '📈',
+    title: 'Acompanhe seu equilíbrio',
+    description: 'Veja como suas finanças e bem-estar se connectam em um dashboard completo.',
+    gradient: ['#000', '#000'], // substituído dinamicamente no render
   },
 ];
 
@@ -44,6 +57,8 @@ interface OnboardingScreenProps {
 }
 
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+  const { theme, toggleTheme } = useTheme();
+  const colors = useThemedColors();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -61,21 +76,49 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     onComplete();
   };
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <View style={styles.slide}>
-      <LinearGradient colors={item.gradient} style={styles.iconContainer}>
-        <Ionicons name={item.icon} size={80} color={colors.card} />
-      </LinearGradient>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
-    </View>
-  );
+  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => {
+    const gradientByIndex: [string, string] =
+      index === 0
+        ? [colors.primary, colors.accent]
+        : index === 1
+        ? [colors.accent, colors.primary]
+        : [colors.primary, colors.success];
+
+    return (
+      <View style={styles.slide}>
+        <View style={styles.slideContent}>
+          <LinearGradient
+            colors={gradientByIndex}
+            style={styles.iconContainer}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.emoji}>{item.emoji}</Text>
+            <Ionicons name={item.icon} size={48} color={colors.background} style={styles.icon} />
+          </LinearGradient>
+
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{item.title}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>{item.description}</Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={handleSkip} style={styles.skipButton}>
-        <Text style={styles.skipText}>Pular</Text>
-      </Pressable>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable onPress={handleSkip} style={styles.skipButton}>
+          <Text style={[styles.skipText, { color: colors.textSecondary }]}>Pular</Text>
+        </Pressable>
+        
+        <Pressable onPress={toggleTheme} style={[styles.themeButton, { backgroundColor: colors.surface1 }]}>
+          <Ionicons 
+            name={theme === 'dark' ? 'sunny' : 'moon'} 
+            size={24} 
+            color={colors.textSecondary} 
+          />
+        </Pressable>
+      </View>
 
       <FlatList
         ref={flatListRef}
@@ -98,106 +141,119 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               key={index}
               style={[
                 styles.dot,
-                index === currentIndex && styles.dotActive,
+                { backgroundColor: colors.border },
+                index === currentIndex && { width: 24, backgroundColor: colors.primary },
               ]}
             />
           ))}
         </View>
 
-        <Pressable onPress={handleNext} style={styles.nextButton}>
-          <LinearGradient
-            colors={[colors.primary, colors.tertiary]}
-            style={styles.nextButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentIndex === slides.length - 1 ? 'Começar' : 'Próximo'}
-            </Text>
-            <Ionicons name="arrow-forward" size={20} color={colors.card} />
-          </LinearGradient>
-        </Pressable>
+        <Button
+          title={currentIndex === slides.length - 1 ? 'Começar agora' : 'Próximo'}
+          onPress={handleNext}
+          variant="primary"
+          size="large"
+          rightIcon={
+            <Ionicons 
+              name="arrow-forward" 
+              size={20} 
+              color={colors.background} 
+            />
+          }
+          style={styles.nextButton}
+        />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: tokens.colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: tokens.spacing.md,
+    paddingBottom: tokens.spacing.sm,
   },
   skipButton: {
-    position: 'absolute',
-    top: 50,
-    right: spacing.lg,
-    zIndex: 10,
-    padding: spacing.sm,
+    padding: tokens.spacing.sm,
+  },
+  themeButton: {
+    padding: tokens.spacing.sm,
+    borderRadius: tokens.radii.md,
+    backgroundColor: tokens.colors.surface1,
+    ...tokens.shadows.sm,
   },
   skipText: {
-    ...typography.body,
-    color: colors.textSecondary,
+    ...tokens.typography.body,
+    color: tokens.colors.textSecondary,
   },
   slide: {
     width,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: tokens.spacing.xl,
+  },
+  slideContent: {
+    alignItems: 'center',
+    maxWidth: 320,
   },
   iconContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: borderRadius.full,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: tokens.spacing.xl,
+    position: 'relative',
+  },
+  emoji: {
+    fontSize: 48,
+    position: 'absolute',
+    top: -10,
+    right: -10,
+  },
+  icon: {
+    marginTop: 10,
   },
   title: {
-    ...typography.h1,
-    color: colors.text,
+    ...tokens.typography.h1,
+    color: tokens.colors.textPrimary,
     textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: tokens.spacing.md,
   },
   description: {
-    ...typography.body,
-    color: colors.textSecondary,
+    ...tokens.typography.body,
+    color: tokens.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
   footer: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xl + 20,
+    paddingHorizontal: tokens.spacing.xl,
+    paddingBottom: tokens.spacing.xl + 20,
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: tokens.spacing.lg,
   },
   dot: {
     width: 8,
     height: 8,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.gray300,
-    marginHorizontal: spacing.xs / 2,
+    borderRadius: 4,
+    backgroundColor: tokens.colors.border,
+    marginHorizontal: tokens.spacing.xs / 2,
   },
   dotActive: {
     width: 24,
-    backgroundColor: colors.primary,
+    backgroundColor: tokens.colors.primary,
   },
   nextButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  nextButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  nextButtonText: {
-    ...typography.button,
-    color: colors.card,
-    marginRight: spacing.sm,
+    width: '100%',
   },
 });

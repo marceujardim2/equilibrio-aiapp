@@ -24,6 +24,16 @@ const CONFIG: ExpoConfig = {
       backgroundColor: "#ffffff",
     },
     package: "com.yourcompany.windsurfequilibrio",
+    softwareKeyboardLayoutMode: "pan",
+    navigationBar: {
+      visible: "sticky-immersive",
+      barStyle: "dark-content",
+      backgroundColor: "#0B0F14",
+    },
+    statusBar: {
+      barStyle: "light-content",
+      backgroundColor: "#0B0F14",
+    },
   },
   web: {
     bundler: "metro",

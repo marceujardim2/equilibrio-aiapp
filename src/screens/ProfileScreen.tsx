@@ -1,41 +1,23 @@
+/**
+ * Profile Screen - Redesigned with new dark theme
+ * Tela de perfil completa com estatísticas e configurações
+ */
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal, TextInput, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert, Modal, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useTheme } from '../contexts/ThemeContext';
+import { useThemedColors } from '../hooks/useThemedColors';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { updateProfile } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Card, Badge, Button } from '../components';
-import { colors, spacing, typography, borderRadius, shadows } from '../theme';
-import { logout, getCurrentUser } from '../services/auth';
+import { tokens } from '../hooks/tokens';
+import { Card, Badge, Button, Input } from '../components';
+import { logout } from '../services/auth';
 import { auth } from '../services/firebase';
 import { requestPermissions, scheduleCheckinReminder, cancelAllNotifications } from '../services/notifications';
-
-interface BadgeItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
-  earned: boolean;
-  delay: number;
-}
-
-const BadgeItem: React.FC<BadgeItemProps> = ({ icon, title, description, earned, delay }) => (
-  <Animated.View entering={FadeInDown.delay(delay).springify()} style={styles.badgeItem}>
-    <View style={[styles.badgeIcon, { opacity: earned ? 1 : 0.3 }]}>
-      <LinearGradient
-        colors={earned ? [colors.warning, colors.mood] : [colors.gray300, colors.gray400]}
-        style={styles.badgeGradient}
-      >
-        <Ionicons name={icon} size={28} color={colors.card} />
-      </LinearGradient>
-    </View>
-    <View style={styles.badgeInfo}>
-      <Text style={[styles.badgeTitle, { opacity: earned ? 1 : 0.5 }]}>{title}</Text>
-      <Text style={[styles.badgeDescription, { opacity: earned ? 1 : 0.5 }]}>{description}</Text>
-    </View>
-    {earned && <Ionicons name="checkmark-circle" size={24} color={colors.success} />}
-  </Animated.View>
-);
 
 interface SettingItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -47,7 +29,7 @@ interface SettingItemProps {
   onSwitchChange?: (value: boolean) => void;
 }
 
-const SettingItem: React.FC<SettingItemProps> = ({
+const SettingItem: React.FC<SettingItemProps & { colors: ReturnType<typeof useThemedColors> }> = ({
   icon,
   title,
   value,
@@ -55,27 +37,34 @@ const SettingItem: React.FC<SettingItemProps> = ({
   showSwitch,
   switchValue,
   onSwitchChange,
+  colors,
 }) => (
   <Pressable onPress={onPress} style={styles.settingItem}>
     <View style={styles.settingLeft}>
-      <View style={styles.settingIcon}>
+      <View style={[styles.settingIcon, { backgroundColor: colors.primary + '20' }]}>
         <Ionicons name={icon} size={20} color={colors.primary} />
       </View>
-      <Text style={styles.settingTitle}>{title}</Text>
+      <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>{title}</Text>
     </View>
     {showSwitch ? (
-      <Switch value={switchValue} onValueChange={onSwitchChange} />
+      <Switch 
+        value={switchValue} 
+        onValueChange={onSwitchChange}
+        trackColor={{ false: colors.surface2, true: colors.primary }}
+        thumbColor={switchValue ? colors.background : colors.muted}
+      />
     ) : (
       <View style={styles.settingRight}>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
-        <Ionicons name="chevron-forward" size={20} color={colors.gray400} />
+        {value && <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>}
+        <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </View>
     )}
   </Pressable>
 );
 
 export default function ProfileScreen() {
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const colors = useThemedColors();
   const [notifications, setNotifications] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [userName, setUserName] = useState('');
@@ -102,14 +91,12 @@ export default function ProfileScreen() {
   const loadStats = async () => {
     try {
       const userId = auth.currentUser?.uid || 'guest';
-      
-      // Calcular dias ativos (check-ins)
+
       const historyData = await AsyncStorage.getItem(`checkin_history_${userId}`);
       if (historyData) {
         const history = JSON.parse(historyData);
         setActiveDays(history.length);
-        
-        // Calcular score médio
+
         const scores = history.map((c: any) => {
           const sleep = c.sleepHours >= 7 && c.sleepHours <= 9 ? 10 : 5;
           const mood = c.mood * 2;
@@ -119,8 +106,7 @@ export default function ProfileScreen() {
         const avg = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
         setAvgScore(Math.round(avg));
       }
-      
-      // Calcular conquistas
+
       const streakData = await AsyncStorage.getItem(`wellness_streak_${userId}`);
       let count = 0;
       if (streakData) {
@@ -134,10 +120,6 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Erro ao carregar stats:', error);
     }
-  };
-
-  const handleEditProfile = () => {
-    setEditModalVisible(true);
   };
 
   const handleSaveProfile = async () => {
@@ -154,35 +136,33 @@ export default function ProfileScreen() {
         });
         setUserName(newName.trim());
         setEditModalVisible(false);
-        Alert.alert('Sucesso!', 'Perfil atualizado com sucesso');
+        Alert.alert('Sucesso! ✅', 'Perfil atualizado com sucesso');
       }
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar o perfil');
-      console.error('Erro ao atualizar perfil:', error);
     }
   };
 
   const handleNotificationsChange = async (value: boolean) => {
     setNotifications(value);
-    
+
     if (value) {
       const granted = await requestPermissions();
       if (granted) {
         try {
           await scheduleCheckinReminder();
-          Alert.alert('Sucesso!', 'Lembretes ativados:\n• Check-in diário às 20h\n• Meditação às 9h');
+          Alert.alert('Sucesso! ✅', 'Lembretes ativados');
         } catch (error) {
           Alert.alert('Erro', 'Não foi possível agendar as notificações');
           setNotifications(false);
         }
       } else {
-        Alert.alert('Permissão Negada', 'Ative as notificações nas configurações do dispositivo');
+        Alert.alert('Permissão Negada', 'Ative as notificações nas configurações');
         setNotifications(false);
       }
     } else {
       try {
         await cancelAllNotifications();
-        Alert.alert('Lembretes Desativados');
       } catch (error) {
         console.error('Erro ao cancelar notificações:', error);
       }
@@ -211,161 +191,158 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 0 }}>
         {/* Header com Avatar */}
         <Animated.View entering={FadeInDown.springify()}>
-          <LinearGradient colors={[colors.primary, colors.tertiary]} style={styles.header}>
+          <LinearGradient
+            colors={[colors.primary, colors.accent]}
+            style={styles.header}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
             <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+              <View style={[styles.avatar, { backgroundColor: colors.background }]}>
+                <Text style={[styles.avatarText, { color: colors.primary }]}>
+                  {userName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase()}
                 </Text>
               </View>
-              <Badge text="Free" color={colors.gray400} style={styles.premiumBadge} />
+              <Badge text="Free" color={colors.muted} style={styles.premiumBadge} />
             </View>
-            <Text style={styles.userName}>{userName}</Text>
-            <Text style={styles.userEmail}>{userEmail}</Text>
+            <Text style={[styles.userName, { color: colors.background }]}>{userName}</Text>
+            <Text style={[styles.userEmail, { color: colors.background }]}>{userEmail}</Text>
           </LinearGradient>
         </Animated.View>
 
         {/* Stats */}
         <Animated.View entering={FadeInDown.delay(100).springify()}>
-          <Card style={styles.statsCard}>
+          <Card variant="elevated" padding="lg" style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{avgScore || '--'}</Text>
-                <Text style={styles.statLabel}>Score Médio</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>{avgScore || '--'}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Score Médio</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{activeDays}</Text>
-                <Text style={styles.statLabel}>Dias Ativos</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>{activeDays}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dias Ativos</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{achievements}</Text>
-                <Text style={styles.statLabel}>Conquistas</Text>
+                <Text style={[styles.statValue, { color: colors.primary }]}>{achievements}</Text>
+                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Conquistas</Text>
               </View>
             </View>
           </Card>
         </Animated.View>
 
-        {/* Badges/Conquistas */}
-        <Text style={styles.sectionTitle}>Conquistas</Text>
-        <Card style={styles.badgesCard}>
-          <BadgeItem
-            icon="flame"
-            title="Sequência de 7 dias"
-            description="Complete 7 dias seguidos"
-            earned={true}
-            delay={200}
-          />
-          <BadgeItem
-            icon="fitness"
-            title="Atleta"
-            description="30 dias de atividade física"
-            earned={true}
-            delay={250}
-          />
-          <BadgeItem
-            icon="wallet"
-            title="Economista"
-            description="Fique abaixo do orçamento por 1 mês"
-            earned={false}
-            delay={300}
-          />
-          <BadgeItem
-            icon="moon"
-            title="Dorminhoco"
-            description="Durma 8h por 7 dias seguidos"
-            earned={false}
-            delay={350}
-          />
-        </Card>
-
         {/* Configurações */}
-        <Text style={styles.sectionTitle}>Configurações</Text>
-        <Card style={styles.settingsCard}>
-          <SettingItem icon="person" title="Editar Perfil" onPress={handleEditProfile} />
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Configurações</Text>
+        <Card variant="outlined" padding="none" style={styles.settingsCard}>
           <SettingItem
+            colors={colors}
+            icon="person"
+            title="Editar Perfil"
+            onPress={() => setEditModalVisible(true)}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <SettingItem
+            colors={colors}
             icon="notifications"
             title="Notificações"
             showSwitch
             switchValue={notifications}
             onSwitchChange={handleNotificationsChange}
           />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
           <SettingItem
+            colors={colors}
             icon="moon"
             title="Modo Escuro"
             showSwitch
-            switchValue={darkMode}
-            onSwitchChange={setDarkMode}
+            switchValue={theme === 'dark'}
+            onSwitchChange={toggleTheme}
           />
-          <SettingItem icon="language" title="Idioma" value="Português" onPress={() => {}} />
-          <SettingItem icon="card" title="Assinatura" value="Free" onPress={() => {}} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <SettingItem colors={colors} icon="language" title="Idioma" value="Português" onPress={() => {}} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <SettingItem colors={colors} icon="card" title="Assinatura" value="Free" onPress={() => {}} />
         </Card>
 
         {/* Outros */}
-        <Card style={styles.settingsCard}>
-          <SettingItem icon="help-circle" title="Ajuda e Suporte" onPress={() => {}} />
-          <SettingItem icon="shield-checkmark" title="Privacidade" onPress={() => {}} />
-          <SettingItem icon="document-text" title="Termos de Uso" onPress={() => {}} />
+        <Card variant="outlined" padding="none" style={styles.settingsCard}>
+          <SettingItem colors={colors} icon="help-circle" title="Ajuda e Suporte" onPress={() => {}} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <SettingItem colors={colors} icon="shield-checkmark" title="Privacidade" onPress={() => {}} />
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+          <SettingItem colors={colors} icon="document-text" title="Termos de Uso" onPress={() => {}} />
         </Card>
 
         {/* Logout */}
         <Animated.View entering={FadeInDown.delay(400).springify()}>
-          <Pressable style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out" size={20} color={colors.error} />
-            <Text style={styles.logoutText}>Sair</Text>
-          </Pressable>
+          <Button
+            title="Sair"
+            onPress={handleLogout}
+            variant="destructive"
+            size="large"
+            leftIcon={<Ionicons name="log-out" size={20} color={colors.background} />}
+            style={styles.logoutButton}
+          />
         </Animated.View>
 
-        <Text style={styles.version}>Versão 1.0.0</Text>
-      </View>
+        <Text style={[styles.version, { color: colors.textSecondary }]}>Versão 1.0.0</Text>
+      </ScrollView>
 
-      {/* Modal de Edição de Perfil */}
+      {/* Modal de Edição */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Editar Perfil</Text>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Editar Perfil</Text>
               <Pressable onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </Pressable>
             </View>
 
             <View style={styles.avatarEditContainer}>
-              <View style={styles.avatarLarge}>
-                <Text style={styles.avatarTextLarge}>
-                  {newName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
+              <View style={[styles.avatarLarge, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.avatarTextLarge, { color: colors.background }]}>
+                  {newName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase() || 'U'}
                 </Text>
               </View>
-              <Text style={styles.avatarHint}>Avatar gerado automaticamente</Text>
+              <Text style={[styles.avatarHint, { color: colors.textSecondary }]}>Avatar gerado automaticamente</Text>
             </View>
 
-            <Text style={styles.inputLabel}>Nome Completo</Text>
-            <TextInput
-              style={styles.input}
+            <Input
+              label="Nome Completo"
               placeholder="Digite seu nome"
-              placeholderTextColor={colors.gray400}
               value={newName}
               onChangeText={setNewName}
+              containerStyle={styles.inputContainer}
             />
 
-            <Text style={styles.inputLabel}>E-mail</Text>
-            <TextInput
-              style={[styles.input, styles.inputDisabled]}
+            <Input
+              label="E-mail"
               value={userEmail}
               editable={false}
+              containerStyle={styles.inputContainer}
             />
-            <Text style={styles.inputHint}>O e-mail não pode ser alterado</Text>
+            <Text style={[styles.inputHint, { color: colors.textSecondary }]}>O e-mail não pode ser alterado</Text>
 
             <View style={styles.modalButtons}>
               <Button
@@ -384,44 +361,36 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   container: {
     flex: 1,
   },
-  content: {
-    paddingBottom: spacing.xl,
+  scrollView: {
+    flex: 1,
   },
   header: {
     alignItems: 'center',
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: tokens.spacing.xl,
+    paddingHorizontal: tokens.spacing.lg,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: spacing.md,
+    marginBottom: tokens.spacing.md,
   },
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.card,
+    borderRadius: tokens.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.lg,
+    ...tokens.shadows.lg,
   },
   avatarText: {
-    ...typography.h1,
-    color: colors.primary,
+    ...tokens.typography.h1,
     fontWeight: '700',
   },
   premiumBadge: {
@@ -430,19 +399,17 @@ const styles = StyleSheet.create({
     right: -10,
   },
   userName: {
-    ...typography.h3,
-    color: colors.card,
-    marginBottom: spacing.xs / 2,
+    ...tokens.typography.h3,
+    marginBottom: tokens.spacing.xs / 2,
   },
   userEmail: {
-    ...typography.body,
-    color: colors.card,
+    ...tokens.typography.body,
     opacity: 0.9,
   },
   statsCard: {
-    marginHorizontal: spacing.lg,
-    marginTop: -spacing.lg,
-    ...shadows.lg,
+    marginHorizontal: tokens.spacing.lg,
+    marginTop: -tokens.spacing.lg,
+    ...tokens.shadows.lg,
   },
   statsRow: {
     flexDirection: 'row',
@@ -453,70 +420,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    ...typography.h2,
-    color: colors.primary,
+    ...tokens.typography.h2,
     fontWeight: '700',
   },
   statLabel: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: spacing.xs / 2,
+    ...tokens.typography.caption,
+    marginTop: tokens.spacing.xs / 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.gray200,
   },
   sectionTitle: {
-    ...typography.h4,
-    color: colors.text,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  badgesCard: {
-    marginHorizontal: spacing.lg,
-  },
-  badgeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
-  },
-  badgeIcon: {
-    marginRight: spacing.md,
-  },
-  badgeGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeInfo: {
-    flex: 1,
-  },
-  badgeTitle: {
-    ...typography.body,
-    color: colors.text,
-    fontWeight: '600',
-    marginBottom: spacing.xs / 2,
-  },
-  badgeDescription: {
-    ...typography.caption,
-    color: colors.textSecondary,
+    ...tokens.typography.h4,
+    marginHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.lg,
+    marginBottom: tokens.spacing.md,
   },
   settingsCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginHorizontal: tokens.spacing.lg,
+    marginBottom: tokens.spacing.md,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray100,
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.md,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -526,121 +455,87 @@ const styles = StyleSheet.create({
   settingIcon: {
     width: 36,
     height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary + '15',
+    borderRadius: tokens.radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginRight: tokens.spacing.sm,
   },
   settingTitle: {
-    ...typography.body,
-    color: colors.text,
+    ...tokens.typography.body,
   },
   settingRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   settingValue: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginRight: spacing.xs,
+    ...tokens.typography.bodySm,
+    marginRight: tokens.spacing.xs,
+  },
+  divider: {
+    height: 1,
+    marginLeft: tokens.spacing.md,
   },
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  logoutText: {
-    ...typography.button,
-    color: colors.error,
-    marginLeft: spacing.sm,
+    marginHorizontal: tokens.spacing.lg,
+    marginTop: tokens.spacing.lg,
   },
   version: {
-    ...typography.caption,
-    color: colors.textSecondary,
+    ...tokens.typography.caption,
     textAlign: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+    marginTop: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xl,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: spacing.lg,
+    borderTopLeftRadius: tokens.radii.xl,
+    borderTopRightRadius: tokens.radii.xl,
+    padding: tokens.spacing.lg,
     maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: tokens.spacing.lg,
   },
   modalTitle: {
-    ...typography.h3,
-    color: colors.text,
+    ...tokens.typography.h3,
   },
   avatarEditContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: tokens.spacing.xl,
   },
   avatarLarge: {
     width: 100,
     height: 100,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
+    borderRadius: tokens.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: tokens.spacing.sm,
   },
   avatarTextLarge: {
-    ...typography.h2,
-    color: colors.card,
+    ...tokens.typography.h2,
     fontWeight: '700',
   },
   avatarHint: {
-    ...typography.caption,
-    color: colors.textSecondary,
+    ...tokens.typography.caption,
   },
-  inputLabel: {
-    ...typography.body,
-    color: colors.text,
-    marginBottom: spacing.xs,
-    fontWeight: '600',
-  },
-  input: {
-    ...typography.body,
-    color: colors.text,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-    marginBottom: spacing.md,
-  },
-  inputDisabled: {
-    backgroundColor: colors.gray100,
-    color: colors.textSecondary,
+  inputContainer: {
+    marginBottom: tokens.spacing.md,
   },
   inputHint: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.md,
+    ...tokens.typography.caption,
+    marginTop: -tokens.spacing.md,
+    marginBottom: tokens.spacing.md,
+    marginLeft: tokens.spacing.md,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing.md,
   },
   modalButton: {
     flex: 1,

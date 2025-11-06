@@ -11,11 +11,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, borderRadius, shadows } from '../theme';
 import { signUpWithEmail, getAuthErrorMessage } from '../services/auth';
+import { ThemeToggleButton } from '../components';
 
 interface SignupScreenProps {
   onSignupSuccess: () => void;
@@ -62,10 +64,11 @@ export default function SignupScreen({ onSignupSuccess, onNavigateToLogin }: Sig
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -79,8 +82,13 @@ export default function SignupScreen({ onSignupSuccess, onNavigateToLogin }: Sig
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
+            <ThemeToggleButton 
+              size={24} 
+              color={colors.card} 
+              style={styles.themeButton} 
+            />
             <View style={styles.logoContainer}>
-              <Ionicons name="sparkles" size={80} color={colors.card} />
+              <Ionicons name="leaf" size={80} color={colors.card} />
             </View>
             <Text style={styles.headerTitle}>Criar Conta</Text>
             <Text style={styles.headerSubtitle}>Comece sua jornada de equilíbrio</Text>
@@ -215,7 +223,8 @@ export default function SignupScreen({ onSignupSuccess, onNavigateToLogin }: Sig
           </Animated.View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -234,6 +243,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
+  },
+  themeButton: {
+    position: 'absolute',
+    top: 50,
+    right: spacing.lg,
+    zIndex: 10,
   },
   logoContainer: {
     marginBottom: spacing.md,

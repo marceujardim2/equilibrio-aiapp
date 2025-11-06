@@ -2,34 +2,48 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from "../screens/HomeScreen";
 import CheckinScreen from "../screens/CheckinScreen";
 import WellnessScreen from "../screens/WellnessScreen";
 import FinanceScreen from "../screens/FinanceScreen";
 import ProfileScreen from "../screens/ProfileScreen";
-import { colors } from "../theme";
+import { useTheme } from "../contexts/ThemeContext";
+import { tokens } from "../hooks/tokens";
+import { useThemedColors } from "../hooks/useThemedColors";
 
 const Tab = createBottomTabNavigator();
 
 export default function RootNavigator() {
+  const { theme } = useTheme();
+  const colors = useThemedColors();
+  const insets = useSafeAreaInsets();
+  const isDark = theme === 'dark';
+  
+  // Cores dinâmicas baseadas no tema
+  const tabBarBackground = colors.surface1;
+  const tabBarActiveColor = colors.primary;
+  const tabBarInactiveColor = isDark ? colors.muted : colors.textSecondary;
+  const borderColor = isDark ? colors.border : colors.divider;
+  
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.gray400,
+          tabBarActiveTintColor: tabBarActiveColor,
+          tabBarInactiveTintColor: tabBarInactiveColor,
           tabBarStyle: {
-            backgroundColor: colors.card,
+            backgroundColor: tabBarBackground,
             borderTopWidth: 1,
-            borderTopColor: colors.gray100,
-            paddingBottom: 8,
+            borderTopColor: borderColor,
+            paddingBottom: 0,
             paddingTop: 8,
-            height: 65,
+            height: 65 + Math.max(insets.bottom - 8, 0),
             elevation: 8,
-            shadowColor: colors.text,
+            shadowColor: isDark ? '#000000' : colors.textPrimary,
             shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
+            shadowOpacity: isDark ? 0.8 : 0.1,
             shadowRadius: 8,
           },
           tabBarLabelStyle: {

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../services/firebase';
-import { colors } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { useThemedColors } from '../hooks/useThemedColors';
+import { tokens } from '../hooks/tokens';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
@@ -12,6 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type AuthScreen = 'onboarding' | 'login' | 'signup';
 
 export default function AuthNavigator() {
+  const { theme } = useTheme();
+  const colors = useThemedColors();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<AuthScreen>('onboarding');
@@ -52,10 +56,12 @@ export default function AuthNavigator() {
     }
   };
 
+  const backgroundColor = colors.background;
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.loadingContainer, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={tokens.colors.primary} />
       </View>
     );
   }
@@ -96,6 +102,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
   },
 });

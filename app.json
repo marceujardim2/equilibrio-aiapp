@@ -20,8 +20,16 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "softwareKeyboardLayoutMode": "pan",
+      "navigationBar": {
+        "visible": "sticky-immersive",
+        "barStyle": "dark-content",
+        "backgroundColor": "#0B0F14"
+      },
+      "statusBar": {
+        "barStyle": "light-content",
+        "backgroundColor": "#0B0F14"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

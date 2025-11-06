@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, SafeAreaView, Platform, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Platform, StatusBar, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -171,8 +172,8 @@ export default function WellnessScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 0 }}>
       <View style={styles.content}>
         <Animated.View entering={FadeInDown.springify()}>
           <Text style={styles.title}>Bem-estar</Text>
@@ -317,7 +318,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,

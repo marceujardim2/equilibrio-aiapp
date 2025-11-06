@@ -1,11 +1,18 @@
+/**
+ * Check-in Screen - Redesigned with new dark theme
+ * Tela de check-in diário moderna e intuitiva
+ */
+
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Alert, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Card, Button } from '../components';
-import { colors, spacing, typography, borderRadius } from '../theme';
+import { useThemedColors } from '../hooks/useThemedColors';
+import { tokens } from '../hooks/tokens';
+import { Card, Button, Input } from '../components';
 import { auth } from '../services/firebase';
 
 const MOODS = [
@@ -17,6 +24,7 @@ const MOODS = [
 ];
 
 export default function CheckinScreen() {
+  const colors = useThemedColors();
   const [sleepHours, setSleepHours] = useState(7);
   const [mood, setMood] = useState(3);
   const [waterCups, setWaterCups] = useState(4);
@@ -33,13 +41,13 @@ export default function CheckinScreen() {
       const today = new Date().toISOString().split('T')[0];
       const key = `checkin_${today}`;
       const data = await AsyncStorage.getItem(key);
-      
+
       if (data) {
         const checkin = JSON.parse(data);
-        setSleepHours(checkin.sleepHours);
-        setMood(checkin.mood);
-        setWaterCups(checkin.waterCups);
-        setActivity(checkin.physicalActivity);
+        setSleepHours(checkin.sleepHours || 7);
+        setMood(checkin.mood || 3);
+        setWaterCups(checkin.waterCups || 4);
+        setActivity(checkin.physicalActivity || false);
         setSpending(checkin.spending?.toString() || '');
       }
     } catch (error) {
@@ -48,7 +56,6 @@ export default function CheckinScreen() {
   };
 
   const handleSave = async () => {
-    // Validações
     if (sleepHours < 1 || sleepHours > 12) {
       Alert.alert('Atenção', 'O sono deve estar entre 1 e 12 horas');
       return;
@@ -65,7 +72,7 @@ export default function CheckinScreen() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const userId = auth.currentUser?.uid || 'guest';
-      
+
       const checkinData = {
         id: `${userId}_${today}`,
         userId,
@@ -78,35 +85,31 @@ export default function CheckinScreen() {
         createdAt: Date.now(),
       };
 
-      // Salvar check-in do dia
       await AsyncStorage.setItem(`checkin_${today}`, JSON.stringify(checkinData));
-      
-      // Atualizar histórico
+
       const historyKey = `checkin_history_${userId}`;
       const historyData = await AsyncStorage.getItem(historyKey);
       const history = historyData ? JSON.parse(historyData) : [];
-      
+
       const existingIndex = history.findIndex((c: any) => c.date === today);
       if (existingIndex >= 0) {
         history[existingIndex] = checkinData;
       } else {
         history.push(checkinData);
       }
-      
+
       await AsyncStorage.setItem(historyKey, JSON.stringify(history));
 
-      // 🔥 NOVO: Criar transação automática se houver gasto
       if (spending && parseFloat(spending) > 0) {
         const transactionsKey = `transactions_${userId}`;
         const existingTransactions = await AsyncStorage.getItem(transactionsKey);
         const transactions = existingTransactions ? JSON.parse(existingTransactions) : [];
-        
-        // Verificar se já existe transação do check-in de hoje
+
         const checkinTransactionId = `checkin_${today}`;
         const existingTransactionIndex = transactions.findIndex(
           (t: any) => t.id === checkinTransactionId
         );
-        
+
         const newTransaction = {
           id: checkinTransactionId,
           userId,
@@ -116,17 +119,15 @@ export default function CheckinScreen() {
           description: 'Gasto rápido (Check-in)',
           date: today,
           createdAt: Date.now(),
-          fromCheckin: true, // Flag para identificar
+          fromCheckin: true,
         };
-        
+
         if (existingTransactionIndex >= 0) {
-          // Atualizar transação existente
           transactions[existingTransactionIndex] = newTransaction;
         } else {
-          // Adicionar nova transação
           transactions.push(newTransaction);
         }
-        
+
         await AsyncStorage.setItem(transactionsKey, JSON.stringify(transactions));
       }
 
@@ -147,201 +148,212 @@ export default function CheckinScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
-        <Animated.View entering={FadeInDown.springify()}>
-          <Text style={styles.title}>Check-in Diário</Text>
-          <Text style={styles.subtitle}>Como foi seu dia hoje?</Text>
-        </Animated.View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 0 }}>
+        <View style={styles.content}>
+          <Animated.View entering={FadeInDown.springify()}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>Fazer Check-in</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Como foi seu dia hoje?</Text>
+          </Animated.View>
 
-        {/* Sono */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="moon" size={24} color={colors.sleep} />
-              <Text style={styles.cardTitle}>Sono</Text>
-            </View>
-            <Text style={styles.valueText}>{sleepHours.toFixed(1)} horas</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={12}
-              step={0.5}
-              value={sleepHours}
-              onValueChange={setSleepHours}
-              minimumTrackTintColor={colors.sleep}
-              maximumTrackTintColor={colors.gray200}
-              thumbTintColor={colors.sleep}
-            />
-          </Card>
-        </Animated.View>
+          {/* Sono */}
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <Card variant="elevated" padding="lg">
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.accent + '20' }]}>
+                  <Ionicons name="moon" size={24} color={colors.accent} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Sono</Text>
+              </View>
+              <Text style={[styles.valueText, { color: colors.primary }]}>{sleepHours.toFixed(1)} horas</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={12}
+                step={0.5}
+                value={sleepHours}
+                onValueChange={setSleepHours}
+                minimumTrackTintColor={colors.accent}
+                maximumTrackTintColor={colors.border}
+                thumbTintColor={colors.accent}
+              />
+            </Card>
+          </Animated.View>
 
-        {/* Humor */}
-        <Animated.View entering={FadeInDown.delay(200).springify()}>
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="happy" size={24} color={colors.mood} />
-              <Text style={styles.cardTitle}>Humor</Text>
-            </View>
-            <View style={styles.moodContainer}>
-              {MOODS.map((m) => (
+          {/* Humor */}
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <Card variant="elevated" padding="lg">
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.warning + '20' }]}>
+                  <Ionicons name="happy" size={24} color={colors.warning} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Humor</Text>
+              </View>
+              <View style={styles.moodContainer}>
+                {MOODS.map((m) => (
+                  <Pressable
+                    key={m.value}
+                    onPress={() => setMood(m.value)}
+                    style={[
+                      styles.moodButton,
+                      { backgroundColor: colors.surface2 },
+                      mood === m.value && { backgroundColor: colors.warning + '20', borderColor: colors.warning, borderWidth: 1 },
+                    ]}
+                  >
+                    <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                    <Text style={[styles.moodLabel, { color: mood === m.value ? colors.warning : colors.textSecondary }]}>{m.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </Card>
+          </Animated.View>
+
+          {/* Água */}
+          <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <Card variant="elevated" padding="lg">
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.info + '20' }]}>
+                  <Ionicons name="water" size={24} color={colors.info} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Água</Text>
+              </View>
+              <Text style={[styles.valueText, { color: colors.primary }]}>{waterCups} copos</Text>
+              <View style={styles.waterContainer}>
+                {[...Array(8)].map((_, i) => (
+                  <Pressable
+                    key={i}
+                    onPress={() => setWaterCups(i + 1)}
+                    style={styles.waterCup}
+                  >
+                    <Ionicons
+                      name={i < waterCups ? 'water' : 'water-outline'}
+                      size={32}
+                      color={i < waterCups ? colors.info : colors.muted}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            </Card>
+          </Animated.View>
+
+          {/* Atividade Física */}
+          <Animated.View entering={FadeInDown.delay(400).springify()}>
+            <Card variant="elevated" padding="lg">
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.success + '20' }]}>
+                  <Ionicons name="fitness" size={24} color={colors.success} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Atividade Física</Text>
+              </View>
+              <View style={styles.activityContainer}>
                 <Pressable
-                  key={m.value}
-                  onPress={() => setMood(m.value)}
+                  onPress={() => setActivity(true)}
                   style={[
-                    styles.moodButton,
-                    mood === m.value && styles.moodButtonActive,
+                    styles.activityButton,
+                    { backgroundColor: colors.surface2 },
+                    activity && { backgroundColor: colors.success + '20', borderColor: colors.success, borderWidth: 1 },
                   ]}
                 >
-                  <Text style={styles.moodEmoji}>{m.emoji}</Text>
-                  <Text style={styles.moodLabel}>{m.label}</Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={32}
+                    color={activity ? colors.success : colors.muted}
+                  />
+                  <Text style={[styles.activityText, { color: activity ? colors.success : colors.textSecondary }]}>Sim</Text>
                 </Pressable>
-              ))}
-            </View>
-          </Card>
-        </Animated.View>
-
-        {/* Água */}
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="water" size={24} color={colors.info} />
-              <Text style={styles.cardTitle}>Água</Text>
-            </View>
-            <Text style={styles.valueText}>{waterCups} copos</Text>
-            <View style={styles.waterContainer}>
-              {[...Array(8)].map((_, i) => (
                 <Pressable
-                  key={i}
-                  onPress={() => setWaterCups(i + 1)}
-                  style={styles.waterCup}
+                  onPress={() => setActivity(false)}
+                  style={[
+                    styles.activityButton,
+                    { backgroundColor: colors.surface2 },
+                    !activity && { backgroundColor: colors.error + '20', borderColor: colors.error, borderWidth: 1 },
+                  ]}
                 >
                   <Ionicons
-                    name={i < waterCups ? 'water' : 'water-outline'}
+                    name="close-circle"
                     size={32}
-                    color={i < waterCups ? colors.info : colors.gray300}
+                    color={!activity ? colors.error : colors.muted}
                   />
+                  <Text style={[styles.activityText, { color: !activity ? colors.error : colors.textSecondary }]}>Não</Text>
                 </Pressable>
-              ))}
-            </View>
-          </Card>
-        </Animated.View>
+              </View>
+            </Card>
+          </Animated.View>
 
-        {/* Atividade Física */}
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="fitness" size={24} color={colors.activity} />
-              <Text style={styles.cardTitle}>Atividade Física</Text>
-            </View>
-            <View style={styles.activityContainer}>
-              <Pressable
-                onPress={() => setActivity(true)}
-                style={[
-                  styles.activityButton,
-                  activity && styles.activityButtonActive,
-                ]}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={32}
-                  color={activity ? colors.activity : colors.gray300}
-                />
-                <Text style={styles.activityText}>Sim</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setActivity(false)}
-                style={[
-                  styles.activityButton,
-                  !activity && styles.activityButtonActive,
-                ]}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={32}
-                  color={!activity ? colors.error : colors.gray300}
-                />
-                <Text style={styles.activityText}>Não</Text>
-              </Pressable>
-            </View>
-          </Card>
-        </Animated.View>
+          {/* Gasto Rápido */}
+          <Animated.View entering={FadeInDown.delay(500).springify()}>
+            <Card variant="elevated" padding="lg">
+              <View style={styles.cardHeader}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '20' }]}>
+                  <Ionicons name="wallet" size={24} color={colors.primary} />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Gasto Rápido</Text>
+              </View>
+              <Input
+                placeholder="R$ 0,00"
+                value={spending}
+                onChangeText={setSpending}
+                keyboardType="numeric"
+                containerStyle={styles.spendingInput}
+              />
+            </Card>
+          </Animated.View>
 
-        {/* Gasto */}
-        <Animated.View entering={FadeInDown.delay(500).springify()}>
-          <Card style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="wallet" size={24} color={colors.financePositive} />
-              <Text style={styles.cardTitle}>Gasto Rápido</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="R$ 0,00"
-              placeholderTextColor={colors.gray400}
-              value={spending}
-              onChangeText={setSpending}
-              keyboardType="numeric"
+          {/* Botão Salvar */}
+          <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.buttonContainer}>
+            <Button
+              title={showSuccess ? '✓ Salvo!' : 'Salvar Check-in'}
+              onPress={handleSave}
+              variant="primary"
+              size="large"
+              style={styles.saveButton}
             />
-          </Card>
-        </Animated.View>
-
-        {/* Botão Salvar */}
-        <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.buttonContainer}>
-          <Button
-            title={showSuccess ? '✓ Salvo!' : 'Salvar Check-in'}
-            onPress={handleSave}
-            variant="primary"
-            size="large"
-            style={styles.saveButton}
-          />
-        </Animated.View>
-      </View>
+          </Animated.View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
-    padding: spacing.lg,
+    padding: tokens.spacing.lg,
   },
   title: {
-    ...typography.h2,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    ...tokens.typography.h2,
+    marginBottom: tokens.spacing.xs,
   },
   subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-  card: {
-    marginBottom: spacing.md,
+    ...tokens.typography.body,
+    marginBottom: tokens.spacing.xl,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: tokens.spacing.md,
+  },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: tokens.spacing.sm,
   },
   cardTitle: {
-    ...typography.h4,
-    color: colors.text,
-    marginLeft: spacing.sm,
+    ...tokens.typography.h4,
   },
   valueText: {
-    ...typography.h3,
-    color: colors.primary,
+    ...tokens.typography.h3,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: tokens.spacing.sm,
+    fontWeight: '700',
   },
   slider: {
     width: '100%',
@@ -350,68 +362,60 @@ const styles = StyleSheet.create({
   moodContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: tokens.spacing.xs,
   },
   moodButton: {
-    alignItems: 'center',
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.gray100,
     flex: 1,
-    marginHorizontal: spacing.xs / 2,
-  },
-  moodButtonActive: {
-    backgroundColor: colors.mood + '20',
-    borderWidth: 2,
-    borderColor: colors.mood,
+    alignItems: 'center',
+    paddingVertical: tokens.spacing.sm,
+    borderRadius: tokens.radii.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   moodEmoji: {
     fontSize: 32,
-    marginBottom: spacing.xs,
+    marginBottom: tokens.spacing.xs,
   },
   moodLabel: {
-    ...typography.caption,
-    color: colors.text,
+    ...tokens.typography.caption,
+    fontWeight: '500',
   },
   waterContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing.sm,
   },
   waterCup: {
-    padding: spacing.xs,
+    padding: tokens.spacing.xs,
   },
   activityContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginTop: tokens.spacing.sm,
   },
   activityButton: {
     alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.gray100,
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
+    borderRadius: tokens.radii.md,
     flex: 1,
-    marginHorizontal: spacing.sm,
-  },
-  activityButtonActive: {
-    backgroundColor: colors.activity + '10',
+    marginHorizontal: tokens.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   activityText: {
-    ...typography.body,
-    color: colors.text,
-    marginTop: spacing.xs,
+    ...tokens.typography.body,
+    marginTop: tokens.spacing.xs,
+    fontWeight: '500',
   },
-  input: {
-    ...typography.h3,
-    color: colors.text,
-    textAlign: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.gray100,
-    borderRadius: borderRadius.md,
+  spendingInput: {
+    marginBottom: 0,
   },
   buttonContainer: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+    marginTop: tokens.spacing.lg,
+    marginBottom: tokens.spacing.xl,
   },
   saveButton: {
     width: '100%',

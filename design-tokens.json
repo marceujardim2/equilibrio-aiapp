@@ -1,0 +1,1013 @@
+{
+  "name": "equilibrioai-design-system",
+  "version": "1.0.0",
+  "description": "Design tokens para EquilíbrioAI - App de finanças e bem-estar",
+  
+  "themes": {
+    "dark": {
+      "colors": {
+        "background": {
+          "value": "#0B0F14",
+          "description": "Cor de fundo principal - muito escura para reduzir cansaço visual"
+        },
+        "surface-1": {
+          "value": "#0F1418",
+          "description": "Superfície de primeiro nível (cards, modais)"
+        },
+        "surface-2": {
+          "value": "#12171C",
+          "description": "Superfície de segundo nível (cards aninhados)"
+        },
+        "surface-3": {
+          "value": "#121820",
+          "description": "Superfície de terceiro nível (elevações maiores)"
+        },
+        "card": {
+          "value": "#121820",
+          "description": "Cor padrão para cards"
+        },
+        "primary": {
+          "value": "#7DE3B6",
+          "description": "Cor primária - verde menta vibrante para ações principais"
+        },
+        "primary-variant": {
+          "value": "#4FD9A0",
+          "description": "Variação da cor primária (hover/pressed)"
+        },
+        "primary-dark": {
+          "value": "#2DB67D",
+          "description": "Primária mais escura para contraste"
+        },
+        "accent": {
+          "value": "#60A7FF",
+          "description": "Cor de destaque - azul vibrante para elementos secundários"
+        },
+        "accent-variant": {
+          "value": "#3D8AFF",
+          "description": "Variação do accent"
+        },
+        "muted": {
+          "value": "#98A0AA",
+          "description": "Cor para textos secundários e elementos desabilitados"
+        },
+        "text-primary": {
+          "value": "#E6EEF2",
+          "description": "Texto principal - alto contraste para legibilidade"
+        },
+        "text-secondary": {
+          "value": "#B9C4CC",
+          "description": "Texto secundário"
+        },
+        "text-tertiary": {
+          "value": "#98A0AA",
+          "description": "Texto terciário (labels, hints)"
+        },
+        "success": {
+          "value": "#5EE3B4",
+          "description": "Cor de sucesso - verde claro"
+        },
+        "warning": {
+          "value": "#FFD166",
+          "description": "Cor de aviso - amarelo vibrante"
+        },
+        "error": {
+          "value": "#FF6B6B",
+          "description": "Cor de erro - vermelho suave"
+        },
+        "info": {
+          "value": "#60A7FF",
+          "description": "Cor de informação - azul"
+        },
+        "glass": {
+          "value": "rgba(255,255,255,0.04)",
+          "description": "Efeito glassmorphism para overlays"
+        },
+        "border": {
+          "value": "rgba(255,255,255,0.08)",
+          "description": "Bordas sutis"
+        },
+        "border-strong": {
+          "value": "rgba(255,255,255,0.12)",
+          "description": "Bordas mais visíveis"
+        },
+        "overlay": {
+          "value": "rgba(0,0,0,0.7)",
+          "description": "Overlay para modais e drawers"
+        },
+        "gradient-primary": {
+          "value": ["#7DE3B6", "#4FD9A0"],
+          "description": "Gradiente primário"
+        },
+        "gradient-accent": {
+          "value": ["#60A7FF", "#3D8AFF"],
+          "description": "Gradiente accent"
+        },
+        "gradient-surface": {
+          "value": ["#0F1418", "#12171C"],
+          "description": "Gradiente para superfícies"
+        }
+      },
+      "elevation": {
+        "e0": {
+          "value": "none",
+          "description": "Sem elevação"
+        },
+        "e1": {
+          "value": "0px 1px 4px rgba(0,0,0,0.6)",
+          "description": "Elevação baixa - cards simples"
+        },
+        "e2": {
+          "value": "0px 6px 18px rgba(0,0,0,0.7)",
+          "description": "Elevação média - cards interativos"
+        },
+        "e3": {
+          "value": "0px 12px 32px rgba(0,0,0,0.8)",
+          "description": "Elevação alta - modais, drawers"
+        }
+      },
+      "radii": {
+        "xs": {
+          "value": 4,
+          "description": "Border radius extra pequeno"
+        },
+        "sm": {
+          "value": 8,
+          "description": "Border radius pequeno"
+        },
+        "md": {
+          "value": 14,
+          "description": "Border radius médio - padrão para cards"
+        },
+        "lg": {
+          "value": 20,
+          "description": "Border radius grande - cards destacados"
+        },
+        "xl": {
+          "value": 28,
+          "description": "Border radius extra grande"
+        },
+        "full": {
+          "value": 9999,
+          "description": "Círculo completo"
+        }
+      },
+      "spacing": {
+        "xs": {
+          "value": 6,
+          "description": "Espaçamento extra pequeno"
+        },
+        "sm": {
+          "value": 12,
+          "description": "Espaçamento pequeno"
+        },
+        "md": {
+          "value": 16,
+          "description": "Espaçamento médio - padrão"
+        },
+        "lg": {
+          "value": 24,
+          "description": "Espaçamento grande"
+        },
+        "xl": {
+          "value": 32,
+          "description": "Espaçamento extra grande"
+        },
+        "2xl": {
+          "value": 48,
+          "description": "Espaçamento 2x extra grande"
+        },
+        "3xl": {
+          "value": 64,
+          "description": "Espaçamento 3x extra grande"
+        }
+      },
+      "typography": {
+        "font-family": {
+          "value": "Inter, System",
+          "description": "Fonte padrão - Inter com fallback para System"
+        },
+        "h1": {
+          "size": 28,
+          "weight": 700,
+          "lineHeight": 36,
+          "letterSpacing": -0.5,
+          "description": "Título principal - usado em headers importantes"
+        },
+        "h2": {
+          "size": 22,
+          "weight": 600,
+          "lineHeight": 30,
+          "letterSpacing": -0.3,
+          "description": "Subtítulo - usado em seções"
+        },
+        "h3": {
+          "size": 20,
+          "weight": 600,
+          "lineHeight": 28,
+          "letterSpacing": 0,
+          "description": "Título de card"
+        },
+        "h4": {
+          "size": 18,
+          "weight": 600,
+          "lineHeight": 26,
+          "letterSpacing": 0,
+          "description": "Título pequeno"
+        },
+        "body": {
+          "size": 16,
+          "weight": 400,
+          "lineHeight": 22,
+          "letterSpacing": 0,
+          "description": "Texto padrão - corpo de texto"
+        },
+        "body-medium": {
+          "size": 16,
+          "weight": 500,
+          "lineHeight": 22,
+          "letterSpacing": 0,
+          "description": "Texto padrão com peso médio"
+        },
+        "small": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 18,
+          "letterSpacing": 0,
+          "description": "Texto pequeno - labels, hints"
+        },
+        "caption": {
+          "size": 11,
+          "weight": 400,
+          "lineHeight": 16,
+          "letterSpacing": 0.2,
+          "description": "Legenda - textos muito pequenos"
+        },
+        "button": {
+          "size": 16,
+          "weight": 600,
+          "lineHeight": 22,
+          "letterSpacing": 0.2,
+          "description": "Texto de botões"
+        },
+        "display": {
+          "size": 36,
+          "weight": 700,
+          "lineHeight": 44,
+          "letterSpacing": -1,
+          "description": "Texto de display - valores grandes, scores"
+        }
+      },
+      "shadows": {
+        "sm": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 1 },
+          "shadowOpacity": 0.6,
+          "shadowRadius": 2,
+          "elevation": 2
+        },
+        "md": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 4 },
+          "shadowOpacity": 0.7,
+          "shadowRadius": 8,
+          "elevation": 4
+        },
+        "lg": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 8 },
+          "shadowOpacity": 0.8,
+          "shadowRadius": 16,
+          "elevation": 8
+        },
+        "xl": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 12 },
+          "shadowOpacity": 0.9,
+          "shadowRadius": 24,
+          "elevation": 12
+        }
+      },
+      "opacity": {
+        "disabled": 0.4,
+        "hover": 0.8,
+        "pressed": 0.6,
+        "overlay": 0.7
+      },
+      "zIndex": {
+        "base": 0,
+        "dropdown": 1000,
+        "sticky": 1100,
+        "fixed": 1200,
+        "modal-backdrop": 1300,
+        "modal": 1400,
+        "popover": 1500,
+        "tooltip": 1600
+      },
+      "animation": {
+        "duration": {
+          "fast": 150,
+          "normal": 250,
+          "slow": 400
+        },
+        "easing": {
+          "ease-in": "cubic-bezier(0.4, 0, 1, 1)",
+          "ease-out": "cubic-bezier(0, 0, 0.2, 1)",
+          "ease-in-out": "cubic-bezier(0.4, 0, 0.2, 1)"
+        }
+      }
+    },
+    "light": {
+      "colors": {
+        "background": {
+          "value": "#FAFBFC",
+          "description": "Cor de fundo principal - branco suave"
+        },
+        "surface-1": {
+          "value": "#FFFFFF",
+          "description": "Superfície de primeiro nível"
+        },
+        "surface-2": {
+          "value": "#F7F9FA",
+          "description": "Superfície de segundo nível"
+        },
+        "surface-3": {
+          "value": "#F2F4F6",
+          "description": "Superfície de terceiro nível"
+        },
+        "card": {
+          "value": "#FFFFFF",
+          "description": "Cor padrão para cards"
+        },
+        "primary": {
+          "value": "#2DB67D",
+          "description": "Cor primária - verde mais escuro para light mode"
+        },
+        "primary-variant": {
+          "value": "#4FD9A0",
+          "description": "Variação da cor primária"
+        },
+        "primary-dark": {
+          "value": "#1F8F5E",
+          "description": "Primária mais escura"
+        },
+        "accent": {
+          "value": "#3D8AFF",
+          "description": "Cor de destaque - azul"
+        },
+        "accent-variant": {
+          "value": "#60A7FF",
+          "description": "Variação do accent"
+        },
+        "muted": {
+          "value": "#718096",
+          "description": "Cor para textos secundários"
+        },
+        "text-primary": {
+          "value": "#1A202C",
+          "description": "Texto principal"
+        },
+        "text-secondary": {
+          "value": "#4A5568",
+          "description": "Texto secundário"
+        },
+        "text-tertiary": {
+          "value": "#718096",
+          "description": "Texto terciário"
+        },
+        "success": {
+          "value": "#2DB67D",
+          "description": "Cor de sucesso"
+        },
+        "warning": {
+          "value": "#F6AD55",
+          "description": "Cor de aviso"
+        },
+        "error": {
+          "value": "#E53E3E",
+          "description": "Cor de erro"
+        },
+        "info": {
+          "value": "#3D8AFF",
+          "description": "Cor de informação"
+        },
+        "glass": {
+          "value": "rgba(255,255,255,0.8)",
+          "description": "Efeito glassmorphism"
+        },
+        "border": {
+          "value": "rgba(0,0,0,0.08)",
+          "description": "Bordas sutis"
+        },
+        "border-strong": {
+          "value": "rgba(0,0,0,0.12)",
+          "description": "Bordas mais visíveis"
+        },
+        "overlay": {
+          "value": "rgba(0,0,0,0.5)",
+          "description": "Overlay para modais"
+        },
+        "gradient-primary": {
+          "value": ["#2DB67D", "#4FD9A0"],
+          "description": "Gradiente primário"
+        },
+        "gradient-accent": {
+          "value": ["#3D8AFF", "#60A7FF"],
+          "description": "Gradiente accent"
+        },
+        "gradient-surface": {
+          "value": ["#FFFFFF", "#F7F9FA"],
+          "description": "Gradiente para superfícies"
+        }
+      },
+      "elevation": {
+        "e0": {
+          "value": "none",
+          "description": "Sem elevação"
+        },
+        "e1": {
+          "value": "0px 1px 3px rgba(0,0,0,0.1)",
+          "description": "Elevação baixa"
+        },
+        "e2": {
+          "value": "0px 4px 12px rgba(0,0,0,0.15)",
+          "description": "Elevação média"
+        },
+        "e3": {
+          "value": "0px 8px 24px rgba(0,0,0,0.2)",
+          "description": "Elevação alta"
+        }
+      },
+      "radii": {
+        "xs": 4,
+        "sm": 8,
+        "md": 14,
+        "lg": 20,
+        "xl": 28,
+        "full": 9999
+      },
+      "spacing": {
+        "xs": 6,
+        "sm": 12,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "2xl": 48,
+        "3xl": 64
+      },
+      "typography": {
+        "font-family": "Inter, System",
+        "h1": {
+          "size": 28,
+          "weight": 700,
+          "lineHeight": 36,
+          "letterSpacing": -0.5
+        },
+        "h2": {
+          "size": 22,
+          "weight": 600,
+          "lineHeight": 30,
+          "letterSpacing": -0.3
+        },
+        "h3": {
+          "size": 20,
+          "weight": 600,
+          "lineHeight": 28,
+          "letterSpacing": 0
+        },
+        "h4": {
+          "size": 18,
+          "weight": 600,
+          "lineHeight": 26,
+          "letterSpacing": 0
+        },
+        "body": {
+          "size": 16,
+          "weight": 400,
+          "lineHeight": 22,
+          "letterSpacing": 0
+        },
+        "body-medium": {
+          "size": 16,
+          "weight": 500,
+          "lineHeight": 22,
+          "letterSpacing": 0
+        },
+        "small": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 18,
+          "letterSpacing": 0
+        },
+        "caption": {
+          "size": 11,
+          "weight": 400,
+          "lineHeight": 16,
+          "letterSpacing": 0.2
+        },
+        "button": {
+          "size": 16,
+          "weight": 600,
+          "lineHeight": 22,
+          "letterSpacing": 0.2
+        },
+        "display": {
+          "size": 36,
+          "weight": 700,
+          "lineHeight": 44,
+          "letterSpacing": -1
+        }
+      },
+      "shadows": {
+        "sm": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 1 },
+          "shadowOpacity": 0.1,
+          "shadowRadius": 2,
+          "elevation": 2
+        },
+        "md": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 4 },
+          "shadowOpacity": 0.15,
+          "shadowRadius": 8,
+          "elevation": 4
+        },
+        "lg": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 8 },
+          "shadowOpacity": 0.2,
+          "shadowRadius": 16,
+          "elevation": 8
+        },
+        "xl": {
+          "shadowColor": "#000",
+          "shadowOffset": { "width": 0, "height": 12 },
+          "shadowOpacity": 0.25,
+          "shadowRadius": 24,
+          "elevation": 12
+        }
+      },
+      "opacity": {
+        "disabled": 0.4,
+        "hover": 0.8,
+        "pressed": 0.6,
+        "overlay": 0.5
+      },
+      "zIndex": {
+        "base": 0,
+        "dropdown": 1000,
+        "sticky": 1100,
+        "fixed": 1200,
+        "modal-backdrop": 1300,
+        "modal": 1400,
+        "popover": 1500,
+        "tooltip": 1600
+      },
+      "animation": {
+        "duration": {
+          "fast": 150,
+          "normal": 250,
+          "slow": 400
+        },
+        "easing": {
+          "ease-in": "cubic-bezier(0.4, 0, 1, 1)",
+          "ease-out": "cubic-bezier(0, 0, 0.2, 1)",
+          "ease-in-out": "cubic-bezier(0.4, 0, 0.2, 1)"
+        }
+      }
+    }
+  }
+}
+  "name": "equilibrioai-dark",
+  "version": "1.0.0",
+  "description": "Design tokens para EquilíbrioAI - Dark Theme completo",
+  "colors": {
+    "background": {
+      "value": "#0B0F14",
+      "comment": "Background principal - cor base mais escura"
+    },
+    "surface-1": {
+      "value": "#0F1418",
+      "comment": "Surface nível 1 - cards e containers principais"
+    },
+    "surface-2": {
+      "value": "#12171C",
+      "comment": "Surface nível 2 - cards aninhados e elementos secundários"
+    },
+    "surface-3": {
+      "value": "#1A2024",
+      "comment": "Surface nível 3 - elementos terciários"
+    },
+    "card": {
+      "value": "#121820",
+      "comment": "Cor padrão para cards"
+    },
+    "primary": {
+      "value": "#7DE3B6",
+      "comment": "Cor primária - verde menta vibrante"
+    },
+    "primary-variant": {
+      "value": "#4FD9A0",
+      "comment": "Variação do primary - mais escura"
+    },
+    "primary-light": {
+      "value": "#A4F0D0",
+      "comment": "Variação do primary - mais clara"
+    },
+    "primary-dark": {
+      "value": "#3DB585",
+      "comment": "Variação do primary - mais escura para hover"
+    },
+    "accent": {
+      "value": "#60A7FF",
+      "comment": "Cor de destaque - azul vibrante"
+    },
+    "accent-variant": {
+      "value": "#3D8AFF",
+      "comment": "Variação do accent"
+    },
+    "muted": {
+      "value": "#98A0AA",
+      "comment": "Cor para textos secundários e elementos desabilitados"
+    },
+    "text-primary": {
+      "value": "#E6EEF2",
+      "comment": "Texto principal - alto contraste"
+    },
+    "text-secondary": {
+      "value": "#B9C4CC",
+      "comment": "Texto secundário - contraste médio"
+    },
+    "text-tertiary": {
+      "value": "#8A9399",
+      "comment": "Texto terciário - contraste baixo"
+    },
+    "success": {
+      "value": "#5EE3B4",
+      "comment": "Estado de sucesso"
+    },
+    "success-dark": {
+      "value": "#3DB585",
+      "comment": "Sucesso - variação escura"
+    },
+    "warning": {
+      "value": "#FFD166",
+      "comment": "Estado de aviso"
+    },
+    "warning-dark": {
+      "value": "#FFB84D",
+      "comment": "Aviso - variação escura"
+    },
+    "error": {
+      "value": "#FF6B6B",
+      "comment": "Estado de erro"
+    },
+    "error-dark": {
+      "value": "#FF4757",
+      "comment": "Erro - variação escura"
+    },
+    "info": {
+      "value": "#60A7FF",
+      "comment": "Estado informativo"
+    },
+    "glass": {
+      "value": "rgba(255,255,255,0.04)",
+      "comment": "Efeito glassmorphism"
+    },
+    "glass-light": {
+      "value": "rgba(255,255,255,0.08)",
+      "comment": "Glass - variação clara"
+    },
+    "overlay": {
+      "value": "rgba(0,0,0,0.7)",
+      "comment": "Overlay para modais"
+    },
+    "border": {
+      "value": "rgba(255,255,255,0.08)",
+      "comment": "Cor padrão para bordas"
+    },
+    "border-light": {
+      "value": "rgba(255,255,255,0.12)",
+      "comment": "Borda - variação clara"
+    },
+    "divider": {
+      "value": "rgba(255,255,255,0.06)",
+      "comment": "Cor para divisores"
+    }
+  },
+  "elevation": {
+    "e0": {
+      "value": "none",
+      "comment": "Sem elevação"
+    },
+    "e1": {
+      "value": "0px 1px 4px rgba(0,0,0,0.6)",
+      "comment": "Elevação baixa - cards simples"
+    },
+    "e2": {
+      "value": "0px 6px 18px rgba(0,0,0,0.7)",
+      "comment": "Elevação média - cards destacados"
+    },
+    "e3": {
+      "value": "0px 12px 32px rgba(0,0,0,0.8)",
+      "comment": "Elevação alta - modais e FAB"
+    },
+    "e4": {
+      "value": "0px 20px 48px rgba(0,0,0,0.9)",
+      "comment": "Elevação máxima - overlays"
+    }
+  },
+  "radii": {
+    "xs": {
+      "value": 4,
+      "comment": "Border radius extra pequeno"
+    },
+    "sm": {
+      "value": 8,
+      "comment": "Border radius pequeno"
+    },
+    "md": {
+      "value": 14,
+      "comment": "Border radius médio - padrão"
+    },
+    "lg": {
+      "value": 20,
+      "comment": "Border radius grande - cards principais"
+    },
+    "xl": {
+      "value": 28,
+      "comment": "Border radius extra grande"
+    },
+    "full": {
+      "value": 9999,
+      "comment": "Border radius completo - círculos"
+    }
+  },
+  "spacing": {
+    "xs": {
+      "value": 6,
+      "comment": "Espaçamento extra pequeno"
+    },
+    "sm": {
+      "value": 12,
+      "comment": "Espaçamento pequeno"
+    },
+    "md": {
+      "value": 16,
+      "comment": "Espaçamento médio - padrão"
+    },
+    "lg": {
+      "value": 24,
+      "comment": "Espaçamento grande"
+    },
+    "xl": {
+      "value": 32,
+      "comment": "Espaçamento extra grande"
+    },
+    "2xl": {
+      "value": 48,
+      "comment": "Espaçamento 2x extra grande"
+    },
+    "3xl": {
+      "value": 64,
+      "comment": "Espaçamento 3x extra grande"
+    }
+  },
+  "typography": {
+    "font-family": {
+      "value": "Inter, System",
+      "comment": "Fonte principal - Inter com fallback para System"
+    },
+    "font-family-mono": {
+      "value": "Menlo, Monaco, monospace",
+      "comment": "Fonte mono para números e valores"
+    },
+    "h1": {
+      "size": 28,
+      "weight": 700,
+      "lineHeight": 36,
+      "letterSpacing": -0.5,
+      "comment": "Título principal - telas e headers"
+    },
+    "h2": {
+      "size": 22,
+      "weight": 600,
+      "lineHeight": 30,
+      "letterSpacing": -0.3,
+      "comment": "Título secundário - seções"
+    },
+    "h3": {
+      "size": 20,
+      "weight": 600,
+      "lineHeight": 28,
+      "letterSpacing": 0,
+      "comment": "Título terciário - cards"
+    },
+    "h4": {
+      "size": 18,
+      "weight": 600,
+      "lineHeight": 24,
+      "letterSpacing": 0,
+      "comment": "Título quaternário"
+    },
+    "body": {
+      "size": 16,
+      "weight": 400,
+      "lineHeight": 22,
+      "letterSpacing": 0,
+      "comment": "Texto padrão - corpo"
+    },
+    "body-sm": {
+      "size": 14,
+      "weight": 400,
+      "lineHeight": 20,
+      "letterSpacing": 0,
+      "comment": "Texto pequeno"
+    },
+    "small": {
+      "size": 13,
+      "weight": 400,
+      "lineHeight": 18,
+      "letterSpacing": 0,
+      "comment": "Texto extra pequeno - labels e captions"
+    },
+    "caption": {
+      "size": 12,
+      "weight": 400,
+      "lineHeight": 16,
+      "letterSpacing": 0.2,
+      "comment": "Caption - textos auxiliares"
+    },
+    "button": {
+      "size": 16,
+      "weight": 600,
+      "lineHeight": 24,
+      "letterSpacing": 0.3,
+      "comment": "Texto de botões"
+    },
+    "label": {
+      "size": 13,
+      "weight": 600,
+      "lineHeight": 18,
+      "letterSpacing": 0.2,
+      "comment": "Labels de formulários"
+    }
+  },
+  "motion": {
+    "duration": {
+      "fast": {
+        "value": 150,
+        "comment": "Animação rápida - hover, press"
+      },
+      "normal": {
+        "value": 300,
+        "comment": "Animação normal - transições"
+      },
+      "slow": {
+        "value": 500,
+        "comment": "Animação lenta - entradas complexas"
+      }
+    },
+    "easing": {
+      "ease-in": {
+        "value": "cubic-bezier(0.4, 0, 1, 1)",
+        "comment": "Easing entrada"
+      },
+      "ease-out": {
+        "value": "cubic-bezier(0, 0, 0.2, 1)",
+        "comment": "Easing saída"
+      },
+      "ease-in-out": {
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "comment": "Easing padrão"
+      },
+      "spring": {
+        "value": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        "comment": "Easing spring - interativo"
+      }
+    },
+    "scale": {
+      "press": {
+        "value": 0.97,
+        "comment": "Escala ao pressionar"
+      },
+      "hover": {
+        "value": 1.02,
+        "comment": "Escala ao hover (não aplicável em mobile)"
+      }
+    }
+  },
+  "z-index": {
+    "base": {
+      "value": 0,
+      "comment": "Z-index base"
+    },
+    "dropdown": {
+      "value": 1000,
+      "comment": "Dropdowns e selects"
+    },
+    "sticky": {
+      "value": 1100,
+      "comment": "Elementos sticky"
+    },
+    "overlay": {
+      "value": 1200,
+      "comment": "Overlays"
+    },
+    "modal": {
+      "value": 1300,
+      "comment": "Modais"
+    },
+    "popover": {
+      "value": 1400,
+      "comment": "Popovers"
+    },
+    "tooltip": {
+      "value": 1500,
+      "comment": "Tooltips"
+    },
+    "fab": {
+      "value": 100,
+      "comment": "Floating Action Button"
+    }
+  },
+  "breakpoints": {
+    "mobile": {
+      "value": "360px",
+      "comment": "Mobile pequeno"
+    },
+    "mobile-md": {
+      "value": "412px",
+      "comment": "Mobile médio"
+    },
+    "tablet": {
+      "value": "768px",
+      "comment": "Tablet"
+    }
+  },
+  "shadows": {
+    "sm": {
+      "shadowColor": "#000000",
+      "shadowOffset": {
+        "width": 0,
+        "height": 1
+      },
+      "shadowOpacity": 0.6,
+      "shadowRadius": 2,
+      "elevation": 2
+    },
+    "md": {
+      "shadowColor": "#000000",
+      "shadowOffset": {
+        "width": 0,
+        "height": 4
+      },
+      "shadowOpacity": 0.7,
+      "shadowRadius": 8,
+      "elevation": 4
+    },
+    "lg": {
+      "shadowColor": "#000000",
+      "shadowOffset": {
+        "width": 0,
+        "height": 8
+      },
+      "shadowOpacity": 0.8,
+      "shadowRadius": 16,
+      "elevation": 8
+    },
+    "xl": {
+      "shadowColor": "#000000",
+      "shadowOffset": {
+        "width": 0,
+        "height": 12
+      },
+      "shadowOpacity": 0.9,
+      "shadowRadius": 24,
+      "elevation": 12
+    }
+  },
+  "opacity": {
+    "disabled": {
+      "value": 0.5,
+      "comment": "Opacidade para elementos desabilitados"
+    },
+    "hover": {
+      "value": 0.8,
+      "comment": "Opacidade ao hover/press"
+    },
+    "overlay-light": {
+      "value": 0.4,
+      "comment": "Overlay leve"
+    },
+    "overlay-medium": {
+      "value": 0.6,
+      "comment": "Overlay médio"
+    },
+    "overlay-heavy": {
+      "value": 0.8,
+      "comment": "Overlay pesado"
+    }
+  }
+}
+
